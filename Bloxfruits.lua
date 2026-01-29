@@ -1,6 +1,6 @@
 --[[ 
-    👑 SUPREME HUB V10 - FARM DE FRUTAS AFK COMPLETO
-    FOCO: PUXAR FRUTA + GUARDAR + SERVER HOP AUTOMÁTICO + WEBHOOK
+    👑 SUPREME HUB V10 - FARM DE FRUTAS AFK MELHORADO
+    FOCO: PUXAR FRUTA + GUARDAR + SERVER HOP AUTOMÁTICO + WEBHOOK + CONFIRMAÇÃO DE INÍCIO
 ]]
 
 getgenv().FruitScript = true
@@ -10,7 +10,7 @@ local sg = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 
 -- CONFIGURAÇÃO DO WEBHOOK
-local webhookURL = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
+local webhookURL = "COLOQUE_AQUI_SEU_WEBHOOK"
 
 local function sendWebhook(msg)
     local data = {["content"] = msg}
@@ -43,6 +43,18 @@ local function serverHop()
     addLog("❌ Erro na API do Roblox", Color3.new(1,0,0))
     sendWebhook("❌ Erro na API do Roblox")
 end
+
+-- CONFIRMAÇÃO DE INÍCIO
+addLog("🚀 Script iniciado com sucesso", Color3.new(0,1,1))
+sendWebhook("🚀 Script iniciado com sucesso")
+
+-- HEARTBEAT (a cada 10 minutos)
+task.spawn(function()
+    while true do
+        task.wait(600)
+        sendWebhook("⏳ Script ainda ativo e rodando...")
+    end
+end)
 
 -- LOOP PRINCIPAL
 task.spawn(function()
