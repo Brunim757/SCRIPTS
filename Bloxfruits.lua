@@ -19,176 +19,144 @@ function SendWebhook(message)
     local HttpService = game:GetService("HttpService")
     local url = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt" -- coloque seu webhook aqui
 
-    local data = {
-        ["content"] = message
-    }
-
+    local data = {["content"] = message}
     local jsonData = HttpService:JSONEncode(data)
     HttpService:PostAsync(url, jsonData, Enum.HttpContentType.ApplicationJson)
 end
 
+local VirtualUser = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+    wait(1)
+    VirtualUser:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+end)
+
 -- 🗡️ Aba de Farm
 local FarmTab = Window:CreateTab("Farm", 4483362458)
+
 FarmTab:CreateToggle({
-   Name = "Auto Farm",
+   Name = "Auto Farm Super Rápido",
    CurrentValue = false,
-   Flag = "AutoFarm",
+   Flag = "AutoFarmFast",
    Callback = function(state)
-      _G.AutoFarm = state
+      _G.AutoFarmFast = state
       if state then
          spawn(function()
-            while _G.AutoFarm do
+            while _G.AutoFarmFast do
+               local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
                for _, enemy in pairs(workspace.Enemies:GetChildren()) do
                   if enemy:FindFirstChild("HumanoidRootPart") then
-                     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame + Vector3.new(0,5,0)
-                     game:GetService("ReplicatedStorage").Remotes.Attack:FireServer(enemy)
-                     SendWebhook("⚔️ Auto Farm derrotou: " .. enemy.Name)
+                     -- Bring mob até você
+                     enemy.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(math.random(-5,5),0,math.random(-5,5))
+                     -- Simula ataque rápido
+                     VirtualUser:Button1Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+                     wait(0.05)
+                     VirtualUser:Button1Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
                   end
                end
-               wait(1)
+               wait(0.2)
             end
          end)
       end
    end,
 })
 
-FarmTab:CreateDropdown({
-   Name = "Escolher Boss",
-   Options = {"Marine Boss", "Sky Boss", "Ice Admiral"},
-   CurrentOption = "Marine Boss",
-   Flag = "BossSelect",
-   Callback = function(Option)
-      SendWebhook("👑 Boss selecionado para farm: " .. Option)
-   end,
+FarmTab:CreateButton({
+   Name = "Bring Mobs",
+   Callback = function()
+      local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+      for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+         if enemy:FindFirstChild("HumanoidRootPart") then
+            enemy.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(math.random(-5,5),0,math.random(-5,5))
+         end
+      end
+      SendWebhook("⚔️ Bring Mobs ativado, inimigos puxados até você!")
+   end
 })
 
--- 🌍 Aba de Teleporte
+-- 🌍 Aba de Teleporte (Sea 1, 2, 3)
 local TeleportTab = Window:CreateTab("Teleportes", 4483362458)
-TeleportTab:CreateButton({
-   Name = "Marineford",
-   Callback = function()
-      game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.Marineford.SpawnLocation.CFrame
-      SendWebhook("🌍 Teleportado para Marineford")
-   end
-})
-TeleportTab:CreateButton({
-   Name = "Sky Island",
-   Callback = function()
-      game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.SkyIsland.SpawnLocation.CFrame
-      SendWebhook("🌍 Teleportado para Sky Island")
-   end
-})
 
--- 🕊️ Aba de Movimento
-local MoveTab = Window:CreateTab("Movimento", 4483362458)
-MoveTab:CreateSlider({
-   Name = "Velocidade",
-   Range = {16, 200},
-   Increment = 1,
-   CurrentValue = 16,
-   Flag = "WalkSpeed",
-   Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
-      SendWebhook("🏃 Velocidade ajustada para: " .. Value)
-   end,
-})
-MoveTab:CreateSlider({
-   Name = "Jump Power",
-   Range = {50, 300},
-   Increment = 10,
-   CurrentValue = 50,
-   Flag = "JumpPower",
-   Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
-      SendWebhook("🦘 Jump Power ajustado para: " .. Value)
+TeleportTab:CreateDropdown({
+   Name = "First Sea",
+   Options = {"Marineford","Sky Island","Prison"},
+   CurrentOption = "Marineford",
+   Flag = "Sea1TP",
+   Callback = function(Option)
+      local locations = {
+         ["Marineford"] = workspace.Marineford.SpawnLocation.CFrame,
+         ["Sky Island"] = workspace.SkyIsland.SpawnLocation.CFrame,
+         ["Prison"] = workspace.Prison.SpawnLocation.CFrame
+      }
+      game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = locations[Option]
+      SendWebhook("🌍 Teleportado para: " .. Option)
    end,
 })
 
--- 🍇 Aba de Frutas (Fruit Sniper Teleport to Player)
+TeleportTab:CreateDropdown({
+   Name = "Second Sea",
+   Options = {"Cafe","Colosseum","Green Zone"},
+   CurrentOption = "Cafe",
+   Flag = "Sea2TP",
+   Callback = function(Option)
+      local locations = {
+         ["Cafe"] = workspace.Cafe.SpawnLocation.CFrame,
+         ["Colosseum"] = workspace.Colosseum.SpawnLocation.CFrame,
+         ["Green Zone"] = workspace.GreenZone.SpawnLocation.CFrame
+      }
+      game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = locations[Option]
+      SendWebhook("🌍 Teleportado para: " .. Option)
+   end,
+})
+
+TeleportTab:CreateDropdown({
+   Name = "Third Sea",
+   Options = {"Mansion","Hydra Island","Great Tree"},
+   CurrentOption = "Mansion",
+   Flag = "Sea3TP",
+   Callback = function(Option)
+      local locations = {
+         ["Mansion"] = workspace.Mansion.SpawnLocation.CFrame,
+         ["Hydra Island"] = workspace.HydraIsland.SpawnLocation.CFrame,
+         ["Great Tree"] = workspace.GreatTree.SpawnLocation.CFrame
+      }
+      game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = locations[Option]
+      SendWebhook("🌍 Teleportado para: " .. Option)
+   end,
+})
+
+-- 🍇 Aba de Frutas (Fruit Sniper Inteligente)
 local FruitTab = Window:CreateTab("Frutas", 4483362458)
+
+local collectedFruits = {}
+
 FruitTab:CreateToggle({
-   Name = "Auto Fruit Sniper",
+   Name = "Auto Fruit Sniper Inteligente",
    CurrentValue = false,
-   Flag = "FruitSniper",
+   Flag = "FruitSniperSmart",
    Callback = function(state)
-      _G.FruitSniper = state
+      _G.FruitSniperSmart = state
       if state then
          spawn(function()
-            while _G.FruitSniper do
+            while _G.FruitSniperSmart do
                local player = game.Players.LocalPlayer
                local hrp = player.Character:WaitForChild("HumanoidRootPart")
                for _, fruit in pairs(workspace:GetChildren()) do
                   if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") then
-                     fruit.Handle.CFrame = hrp.CFrame + Vector3.new(0,3,0)
-                     SendWebhook("🍇 Fruta puxada até você: " .. fruit.Name)
+                     if not collectedFruits[fruit.Name] then
+                        fruit.Handle.CFrame = hrp.CFrame + Vector3.new(0,3,0)
+                        collectedFruits[fruit.Name] = true
+                        SendWebhook("🍇 Nova fruta coletada: " .. fruit.Name)
+                     else
+                        -- já coletada, joga fora
+                        fruit:Destroy()
+                        SendWebhook("🗑️ Fruta duplicada descartada: " .. fruit.Name)
+                     end
                   end
                end
-               wait(2)
+               wait(3)
             end
          end)
       end
    end
-})
-
--- ⚔️ Aba de Raids
-local RaidTab = Window:CreateTab("Raids", 4483362458)
-RaidTab:CreateToggle({
-   Name = "Auto Raid",
-   CurrentValue = false,
-   Flag = "AutoRaid",
-   Callback = function(state)
-      _G.AutoRaid = state
-      if state then
-         spawn(function()
-            while _G.AutoRaid do
-               SendWebhook("🔥 Raid iniciada automaticamente")
-               wait(10)
-            end
-         end)
-      end
-   end,
-})
-
--- 👤 Aba de Player
-local PlayerTab = Window:CreateTab("Player", 4483362458)
-PlayerTab:CreateKeybind({
-   Name = "Teleport Rápido",
-   CurrentKeybind = "Q",
-   Flag = "QuickTP",
-   Callback = function()
-      game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.SpawnLocation.CFrame
-      SendWebhook("⚡ Teleporte rápido usado (Q)")
-   end,
-})
-
-PlayerTab:CreateSlider({
-   Name = "Zoom da Câmera",
-   Range = {70, 200},
-   Increment = 10,
-   CurrentValue = 70,
-   Flag = "CameraZoom",
-   Callback = function(Value)
-      game.Players.LocalPlayer.CameraMaxZoomDistance = Value
-      SendWebhook("🎥 Zoom da câmera ajustado para: " .. Value)
-   end,
-})
-
--- 📦 Aba de Extras
-local ExtraTab = Window:CreateTab("Extras", 4483362458)
-ExtraTab:CreateButton({
-   Name = "Auto Chest",
-   Callback = function()
-      for _, chest in pairs(workspace:GetChildren()) do
-         if chest.Name:lower():find("chest") then
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = chest.CFrame
-            SendWebhook("💰 Baú coletado automaticamente: " .. chest.Name)
-         end
-      end
-   end
-})
-
-ExtraTab:CreateNotification({
-   Title = "Hub Ultra Bruno",
-   Content = "Carregado com sucesso! Aproveite.",
-   Duration = 5
 })
