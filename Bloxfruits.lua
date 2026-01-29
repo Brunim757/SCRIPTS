@@ -13,7 +13,7 @@ local HttpService = game:GetService("HttpService")
 local VirtualUser = game:GetService("VirtualUser")
 
 -- ================= CONFIG =================
-local WEBHOOK = "https://discord.com"
+local WEBHOOK = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
 local GUI_OFFSET_Y = 50 
 
 getgenv().FruitCount = 0
