@@ -1,54 +1,62 @@
--- Script Completo: Fruit Sniper Inteligente + Auto Chest Teleport
--- Teleporta frutas até você e teleporta você até os baús
-
 local player = game.Players.LocalPlayer
-local hrp = player.Character:WaitForChild("HumanoidRootPart")
+local rs = game:GetService("ReplicatedStorage")
+local runService = game:GetService("RunService")
 
--- Lista de frutas já coletadas
-local collectedFruits = {}
+-- Função Roubada: Teleporte Sem Velocidade (Bypass)
+local function teleportRoubado(targetCFrame)
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        -- Desativa detecção de queda/velocidade temporariamente
+        char.Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+        char.HumanoidRootPart.CFrame = targetCFrame
+        task.wait(0.1) -- Delay mínimo para o servidor aceitar a posição
+        char.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
+end
 
--- 🍇 Função para frutas
-function FruitSniper()
+-- Função Fruit Master (Puxa, Equipa e Guarda)
+local function ultraFruit()
     for _, fruit in pairs(workspace:GetChildren()) do
-        if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") then
-            if not collectedFruits[fruit.Name] then
-                -- Teleporta fruta até você
-                fruit.Handle.CFrame = hrp.CFrame + Vector3.new(0,3,0)
-                collectedFruits[fruit.Name] = true
-                print("🍇 Nova fruta coletada:", fruit.Name)
-            else
-                -- Já coletada, descarta
-                fruit:Destroy()
-                print("🗑️ Fruta duplicada descartada:", fruit.Name)
+        if fruit:IsA("Tool") and (fruit.Name:find("Fruit") or fruit:FindFirstChild("Handle")) then
+            -- 1. Puxa a fruta pra você
+            fruit.Handle.CFrame = player.Character.HumanoidRootPart.CFrame
+            task.wait(0.2)
+            
+            -- 2. Equipa e tenta guardar usando o Remote Oficial
+            player.Character.Humanoid:EquipTool(fruit)
+            local fruitName = fruit:GetAttribute("FruitName") or fruit.Name
+            
+            pcall(function()
+                -- Remote que comunica direto com o servidor do Blox Fruits
+                rs.Remotes.CommF_:InvokeServer("StoreFruit", fruitName, fruit)
+            end)
+            print("💎 Fruta Roubada e Guardada: " .. fruit.Name)
+        end
+    end
+end
+
+-- Função Chest Aura (Limpa o mapa rápido)
+local function ultraChest()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("TouchTransmitter") and v.Parent.Name:find("Chest") then
+            local chest = v.Parent
+            if chest:IsA("BasePart") then
+                -- Teleporta instantâneo
+                teleportRoubado(chest.CFrame)
+                -- Simula o toque no baú
+                firetouchinterest(player.Character.HumanoidRootPart, chest, 0)
+                firetouchinterest(player.Character.HumanoidRootPart, chest, 1)
+                task.wait(0.1)
             end
         end
     end
 end
 
--- 💰 Função para baús (teleporta você até cada baú)
-function AutoChest()
-    for _, chest in pairs(workspace:GetChildren()) do
-        if chest.Name:lower():find("chest") then
-            local target = nil
-            if chest:IsA("Model") and chest:FindFirstChild("PrimaryPart") then
-                target = chest.PrimaryPart
-            elseif chest:FindFirstChild("HumanoidRootPart") then
-                target = chest.HumanoidRootPart
-            end
-            if target then
-                hrp.CFrame = target.CFrame + Vector3.new(0,3,0)
-                wait(0.5) -- pequeno delay para coletar
-                print("💰 Teleportado para baú:", chest.Name)
-            end
-        end
-    end
-end
-
--- 🔄 Loop automático
-spawn(function()
+-- Loop de Alta Velocidade
+task.spawn(function()
     while true do
-        FruitSniper()   -- pega frutas
-        AutoChest()     -- teleporta para baús
-        wait(5)         -- intervalo para não travar
+        pcall(ultraFruit)
+        pcall(ultraChest)
+        task.wait(0.5) -- Meio segundo para o Anti-Cheat não acumular logs
     end
 end)
