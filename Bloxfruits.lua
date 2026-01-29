@@ -1,6 +1,6 @@
 --[[ 
-👑 SUPREME HUB V10 MOBILE – SEM SERVER HOP
-📱 Webhook Delta + Coleta Infinita + Auto-Team
+👑 SUPREME HUB V10 MOBILE – NOMES DAS FRUTAS
+📱 Webhook Delta + Nome da Fruta + Sem Server Hop
 ]]
 
 getgenv().FruitScript = true
@@ -13,6 +13,7 @@ local HttpService = game:GetService("HttpService")
 local VirtualUser = game:GetService("VirtualUser")
 
 -- ================= CONFIG =================
+-- LEMBRETE: Use um novo link de webhook se o antigo foi deletado
 local WEBHOOK = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
 local GUI_OFFSET_Y = 50 
 
@@ -34,7 +35,7 @@ local function sendWebhook(msg)
                 Headers = {["Content-Type"] = "application/json"},
                 Body = HttpService:JSONEncode({
                     content = msg, 
-                    username = "Supreme Hub Fruit"
+                    username = "Supreme Hub Finder"
                 })
             })
         end)
@@ -87,7 +88,7 @@ player.Idled:Connect(function()
     end)
 end)
 
--- ================= AUTO PIRATA (REFORÇADO) =================
+-- ================= AUTO PIRATA =================
 local function joinPirates()
     local attempts = 0
     repeat
@@ -97,14 +98,10 @@ local function joinPirates()
         end)
         attempts = attempts + 1
     until (player.Team ~= nil and player.Team.Name ~= "") or attempts > 15
-    
-    if player.Team then
-        sendWebhook("🏴‍☠️ Time Pirata definido com sucesso!")
-    end
 end
 task.spawn(joinPirates)
 
--- ================= LOOP PRINCIPAL (COLETA APENAS) =================
+-- ================= LOOP PRINCIPAL (NOMES DAS FRUTAS) =================
 task.spawn(function()
     while task.wait(5) do
         if not getgenv().FruitScript then return end
@@ -114,26 +111,29 @@ task.spawn(function()
 
         if hrp then
             for _, tool in pairs(workspace:GetChildren()) do
-                if tool:IsA("Tool") and tool:FindFirstChild("Handle") and tool.Name:lower():find("fruit") then
+                -- Verifica se é uma fruta pelo nome ou classe
+                if tool:IsA("Tool") and (tool.Name:lower():find("fruit") or tool:FindFirstChild("Handle")) then
+                    local fruitName = tool.Name
+                    
                     getgenv().FruitCount += 1
                     lblCollected.Text = "🍏 Coletadas: "..getgenv().FruitCount
                     
-                    -- Coleta
+                    -- Teleporta a fruta e equipa
                     tool.Handle.CFrame = hrp.CFrame
                     task.wait(0.5)
                     char.Humanoid:EquipTool(tool)
                     task.wait(0.5)
 
-                    -- Guarda
-                    local ok = RS.Remotes.CommF_:InvokeServer("StoreFruit", tool.Name)
+                    -- Tenta guardar no inventário
+                    local ok = RS.Remotes.CommF_:InvokeServer("StoreFruit", fruitName)
                     if ok then
                         getgenv().StoredCount += 1
                         lblStored.Text = "📦 Guardadas: "..getgenv().StoredCount
-                        sendWebhook("✅ Fruta guardada: "..tool.Name)
+                        sendWebhook("✅ **Fruta Coletada:** " .. fruitName .. " (Guardada com sucesso!)")
                     else
                         getgenv().FailCount += 1
                         lblFailed.Text = "❌ Falhas: "..getgenv().FailCount
-                        sendWebhook("⚠️ Inventário cheio!")
+                        sendWebhook("⚠️ **Falha ao guardar:** " .. fruitName .. " (Inventário cheio ou erro)")
                     end
                     task.wait(1)
                 end
@@ -142,16 +142,4 @@ task.spawn(function()
     end
 end)
 
--- ================= HEARTBEAT (STATUS A CADA 10 MINUTOS) =================
-task.spawn(function()
-    while task.wait(600) do
-        sendWebhook(
-            "📊 STATUS ATUAL\n"..
-            "🍏 Coletadas: "..getgenv().FruitCount..
-            "\n📦 Guardadas: "..getgenv().StoredCount..
-            "\n❌ Falhas: "..getgenv().FailCount
-        )
-    end
-end)
-
-sendWebhook("🚀 SUPREME HUB V10 ATIVADO (MODO PERMANENTE)")
+sendWebhook("🚀 **SUPREME HUB V10 ATIVADO**\nMonitorando frutas neste servidor...")
