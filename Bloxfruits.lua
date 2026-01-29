@@ -64,7 +64,7 @@ local function serverHop()
     addLog("Buscando novo servidor...", Color3.new(1,0.5,0))
     local HttpService = game:GetService("HttpService")
     local success, result = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
+        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
     end)
     
     if success then
