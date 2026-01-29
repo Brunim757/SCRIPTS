@@ -1,6 +1,6 @@
 --[[ 
-👑 SUPREME HUB V10 MOBILE – TOTALMENTE CORRIGIDO
-📱 Webhook Delta + Server Hop Inteligente + Auto-Team
+👑 SUPREME HUB V10 MOBILE – SEM SERVER HOP
+📱 Webhook Delta + Coleta Infinita + Auto-Team
 ]]
 
 getgenv().FruitScript = true
@@ -10,19 +10,16 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
 
 -- ================= CONFIG =================
 local WEBHOOK = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
-local MIN_SERVER_TIME = 30 
 local GUI_OFFSET_Y = 50 
 
 getgenv().FruitCount = 0
 getgenv().StoredCount = 0
 getgenv().FailCount = 0
 local enteredServerAt = tick()
-local hopping = false
 
 -- ================= WEBHOOK (DELTA COMPATIBLE) =================
 local function sendWebhook(msg)
@@ -107,46 +104,17 @@ local function joinPirates()
 end
 task.spawn(joinPirates)
 
--- ================= SERVER HOP INTELIGENTE =================
-local function serverHop()
-    if hopping then return end
-    hopping = true
-    sendWebhook("🔄 Procurando novo servidor estável...")
-
-    local url = "https://games.roblox.com" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
-    
-    local function getServers()
-        local ok, res = pcall(function() return game:HttpGet(url) end)
-        if ok then return HttpService:JSONDecode(res) end
-    end
-
-    local serverList = getServers()
-    if serverList and serverList.data then
-        for _, s in pairs(serverList.data) do
-            -- Garante 3 vagas livres para não dar erro de Server Full
-            if s.playing < (s.maxPlayers - 3) and s.id ~= game.JobId then
-                sendWebhook("🚀 Teleportando para servidor: " .. s.id)
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id)
-                task.wait(10)
-            end
-        end
-    end
-    hopping = false
-end
-
--- ================= LOOP PRINCIPAL =================
+-- ================= LOOP PRINCIPAL (COLETA APENAS) =================
 task.spawn(function()
     while task.wait(5) do
         if not getgenv().FruitScript then return end
         
         local char = player.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local foundInThisTurn = false
 
         if hrp then
             for _, tool in pairs(workspace:GetChildren()) do
                 if tool:IsA("Tool") and tool:FindFirstChild("Handle") and tool.Name:lower():find("fruit") then
-                    foundInThisTurn = true
                     getgenv().FruitCount += 1
                     lblCollected.Text = "🍏 Coletadas: "..getgenv().FruitCount
                     
@@ -171,14 +139,19 @@ task.spawn(function()
                 end
             end
         end
-
-        -- Lógica de Hop: Se passou o tempo mínimo e não tem fruta, pula.
-        if (tick() - enteredServerAt) >= MIN_SERVER_TIME then
-            if not foundInThisTurn then
-                serverHop()
-            end
-        end
     end
 end)
 
-sendWebhook("🚀 SUPREME HUB V10 ATIVADO")
+-- ================= HEARTBEAT (STATUS A CADA 10 MINUTOS) =================
+task.spawn(function()
+    while task.wait(600) do
+        sendWebhook(
+            "📊 STATUS ATUAL\n"..
+            "🍏 Coletadas: "..getgenv().FruitCount..
+            "\n📦 Guardadas: "..getgenv().StoredCount..
+            "\n❌ Falhas: "..getgenv().FailCount
+        )
+    end
+end)
+
+sendWebhook("🚀 SUPREME HUB V10 ATIVADO (MODO PERMANENTE)")
