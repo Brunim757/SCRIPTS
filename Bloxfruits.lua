@@ -1,6 +1,6 @@
 --[[ 
-👑 SUPREME HUB V10 MOBILE – NOMES DAS FRUTAS
-📱 Webhook Delta + Nome da Fruta + Sem Server Hop
+👑 SUPREME HUB V10 MOBILE – FIX FALHAS
+📱 Webhook Delta + Nome da Fruta + Filtro de Itens
 ]]
 
 getgenv().FruitScript = true
@@ -13,8 +13,7 @@ local HttpService = game:GetService("HttpService")
 local VirtualUser = game:GetService("VirtualUser")
 
 -- ================= CONFIG =================
--- LEMBRETE: Use um novo link de webhook se o antigo foi deletado
-local WEBHOOK = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
+local WEBHOOK = "https://discord.com"
 local GUI_OFFSET_Y = 50 
 
 getgenv().FruitCount = 0
@@ -22,7 +21,7 @@ getgenv().StoredCount = 0
 getgenv().FailCount = 0
 local enteredServerAt = tick()
 
--- ================= WEBHOOK (DELTA COMPATIBLE) =================
+-- ================= WEBHOOK =================
 local function sendWebhook(msg)
     if WEBHOOK == "" then return end
     local proxyURL = WEBHOOK:gsub("discord.com", "webhook.lewisakura.moe")
@@ -71,11 +70,10 @@ local lblStored = makeLabel("📦 Guardadas: 0", 20)
 local lblFailed = makeLabel("❌ Falhas: 0", 40)
 local lblTimer = makeLabel("⏳ Tempo: 0s", 60)
 
--- ================= TIMER REALTIME =================
+-- ================= TIMER =================
 task.spawn(function()
     while true do
-        local tempo = math.floor(tick() - enteredServerAt)
-        lblTimer.Text = "⏳ Tempo no server: "..tempo.."s"
+        lblTimer.Text = "⏳ Tempo no server: "..math.floor(tick() - enteredServerAt).."s"
         task.wait(1)
     end
 end)
@@ -89,19 +87,16 @@ player.Idled:Connect(function()
 end)
 
 -- ================= AUTO PIRATA =================
-local function joinPirates()
+task.spawn(function()
     local attempts = 0
     repeat
         task.wait(2)
-        pcall(function()
-            RS.Remotes.CommF_:InvokeServer("SetTeam", "Pirates")
-        end)
+        pcall(function() RS.Remotes.CommF_:InvokeServer("SetTeam", "Pirates") end)
         attempts = attempts + 1
-    until (player.Team ~= nil and player.Team.Name ~= "") or attempts > 15
-end
-task.spawn(joinPirates)
+    until (player.Team ~= nil) or attempts > 10
+end)
 
--- ================= LOOP PRINCIPAL (NOMES DAS FRUTAS) =================
+-- ================= LOOP PRINCIPAL (FIXED) =================
 task.spawn(function()
     while task.wait(5) do
         if not getgenv().FruitScript then return end
@@ -110,30 +105,34 @@ task.spawn(function()
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
         if hrp then
-            for _, tool in pairs(workspace:GetChildren()) do
-                -- Verifica se é uma fruta pelo nome ou classe
-                if tool:IsA("Tool") and (tool.Name:lower():find("fruit") or tool:FindFirstChild("Handle")) then
-                    local fruitName = tool.Name
+            -- Procura frutas APENAS no Workspace (frutas spawnadas)
+            for _, item in pairs(workspace:GetChildren()) do
+                -- Verifica se é uma fruta real pelo nome e se tem o "Handle" (item físico)
+                if item:IsA("Tool") and item.Name:lower():find("fruit") and item:FindFirstChild("Handle") then
+                    local fruitName = item.Name
                     
                     getgenv().FruitCount += 1
                     lblCollected.Text = "🍏 Coletadas: "..getgenv().FruitCount
                     
-                    -- Teleporta a fruta e equipa
-                    tool.Handle.CFrame = hrp.CFrame
+                    -- Puxa e equipa
+                    item.Handle.CFrame = hrp.CFrame
                     task.wait(0.5)
-                    char.Humanoid:EquipTool(tool)
-                    task.wait(0.5)
+                    char.Humanoid:EquipTool(item)
+                    task.wait(0.7) -- Delay para garantir que equipou
 
-                    -- Tenta guardar no inventário
-                    local ok = RS.Remotes.CommF_:InvokeServer("StoreFruit", fruitName)
-                    if ok then
-                        getgenv().StoredCount += 1
-                        lblStored.Text = "📦 Guardadas: "..getgenv().StoredCount
-                        sendWebhook("✅ **Fruta Coletada:** " .. fruitName .. " (Guardada com sucesso!)")
-                    else
-                        getgenv().FailCount += 1
-                        lblFailed.Text = "❌ Falhas: "..getgenv().FailCount
-                        sendWebhook("⚠️ **Falha ao guardar:** " .. fruitName .. " (Inventário cheio ou erro)")
+                    -- Só tenta guardar se o item estiver na mão agora
+                    local toolInHand = char:FindFirstChildOfClass("Tool")
+                    if toolInHand and toolInHand.Name == fruitName then
+                        local ok = RS.Remotes.CommF_:InvokeServer("StoreFruit", fruitName)
+                        if ok then
+                            getgenv().StoredCount += 1
+                            lblStored.Text = "📦 Guardadas: "..getgenv().StoredCount
+                            sendWebhook("✅ **Fruta Guardada:** " .. fruitName)
+                        else
+                            getgenv().FailCount += 1
+                            lblFailed.Text = "❌ Falhas: "..getgenv().FailCount
+                            sendWebhook("⚠️ **Inventário Cheio para:** " .. fruitName)
+                        end
                     end
                     task.wait(1)
                 end
@@ -141,5 +140,3 @@ task.spawn(function()
         end
     end
 end)
-
-sendWebhook("🚀 **SUPREME HUB V10 ATIVADO**\nMonitorando frutas neste servidor...")
