@@ -1,81 +1,68 @@
+-- INTERRUPTOR: Mude para false para desligar manualmente ou use o botão
+getgenv().ScriptAtivo = true 
+
 local player = game.Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
-local starterGui = game:GetService("StarterGui")
 
--- Função para mandar avisos no canto da tela
-local function avisar(titulo, msg)
-    starterGui:SetCore("SendNotification", {
-        Title = titulo;
-        Text = msg;
-        Duration = 3;
-    })
-end
-
--- Teleporte "Blink" (TP Quebrado para enganar o Anti-Cheat)
-local function blinkTeleport(targetCFrame)
-    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
+-- 1. Botão Visual para Desligar (Mobile/PC)
+local function criarBotaoSair()
+    local sg = Instance.new("ScreenGui", player.PlayerGui)
+    sg.Name = "ControleScript"
+    local btn = Instance.new("TextButton", sg)
+    btn.Size = UDim2.new(0, 100, 0, 50)
+    btn.Position = UDim2.new(0, 10, 0.5, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    btn.Text = "DESLIGAR"
+    btn.TextColor3 = Color3.new(1, 1, 1)
     
-    local distance = (targetCFrame.Position - hrp.Position).Magnitude
-    if distance > 10 then
-        local direction = (targetCFrame.Position - hrp.Position).Unit
-        hrp.CFrame = hrp.CFrame + (direction * (distance * 0.5)) -- Salto intermediário
-        task.wait(0.05)
-    end
-    hrp.CFrame = targetCFrame
+    btn.MouseButton1Click:Connect(function()
+        getgenv().ScriptAtivo = false
+        sg:Destroy()
+        print("🛑 Script encerrado pelo usuário.")
+    end)
 end
 
--- Lógica da Fruta (Puxar + Guardar + Notificar)
-local function processFruit()
-    for _, fruit in pairs(workspace:GetChildren()) do
-        if fruit:IsA("Tool") and (fruit.Name:find("Fruit") or fruit:FindFirstChild("Handle")) then
-            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-            
-            avisar("🍇 Fruta Detectada!", "Tentando coletar: " .. fruit.Name)
-            
-            -- Puxa e Equipa
-            fruit.Handle.CFrame = hrp.CFrame
-            task.wait(0.3)
-            player.Character.Humanoid:EquipTool(fruit)
-            
-            -- Tenta Guardar
-            local fruitName = fruit:GetAttribute("FruitName") or fruit.Name
-            local success, _ = pcall(function()
-                return rs.Remotes.CommF_:InvokeServer("StoreFruit", fruitName, fruit)
-            end)
-            
-            if success then
-                avisar("✅ Sucesso", fruit.Name .. " guardada no inventário!")
-            else
-                avisar("⚠️ Aviso", "Não deu para guardar " .. fruit.Name .. " (Já possui?)")
-            end
-            task.wait(0.5)
-        end
+-- 2. Teleporte Blink (Anti-Kick)
+local function safeTeleport(targetCFrame)
+    if not getgenv().ScriptAtivo then return end
+    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.Velocity = Vector3.new(0,0,0)
+        hrp.CFrame = targetCFrame + Vector3.new(0, 3, 0)
+        task.wait(0.6) -- Delay seguro contra Security Kick
     end
 end
 
--- Farm de Baú (Com delay anti-kick)
-local function farmChests()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("TouchTransmitter") and v.Parent.Name:find("Chest") then
-            local chest = v.Parent
-            if chest:IsA("BasePart") then
-                blinkTeleport(chest.CFrame)
-                firetouchinterest(player.Character.HumanoidRootPart, chest, 0)
-                firetouchinterest(player.Character.HumanoidRootPart, chest, 1)
-                task.wait(0.3) -- Delay vital para não ser expulso
-            end
-        end
-    end
-end
-
--- Start
-avisar("🚀 Script Ativo", "Criando script de frutas e baús...")
-
+-- 3. Loop com Verificação de Atividade
 task.spawn(function()
-    while true do
-        pcall(processFruit)
-        pcall(farmChests)
+    criarBotaoSair()
+    
+    while getgenv().ScriptAtivo do
+        -- Parte das Frutas
+        pcall(function()
+            for _, tool in pairs(workspace:GetChildren()) do
+                if not getgenv().ScriptAtivo then break end
+                if tool:IsA("Tool") and (tool.Name:find("Fruit") or tool:FindFirstChild("Handle")) then
+                    tool.Handle.CFrame = player.Character.HumanoidRootPart.CFrame
+                    task.wait(0.5)
+                    player.Character.Humanoid:EquipTool(tool)
+                    rs.Remotes.CommF_:InvokeServer("StoreFruit", tool.Name, tool)
+                end
+            end
+        end)
+
+        -- Parte dos Baús
+        pcall(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if not getgenv().ScriptAtivo then break end
+                if v:IsA("TouchTransmitter") and v.Parent.Name:find("Chest") then
+                    safeTeleport(v.Parent.CFrame)
+                    firetouchinterest(player.Character.HumanoidRootPart, v.Parent, 0)
+                    firetouchinterest(player.Character.HumanoidRootPart, v.Parent, 1)
+                end
+            end
+        end)
+        
         task.wait(1)
     end
 end)
