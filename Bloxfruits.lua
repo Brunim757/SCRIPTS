@@ -1,5 +1,6 @@
+
 --[[ 
-👑 SUPREME HUB V10 MOBILE – GUI FINAL
+👑 SUPREME HUB V10 MOBILE – GUI FINAL (VERSÃO DELTA)
 📱 Contador + Timer + Webhook + AFK + Server Hop
 ]]
 
@@ -17,8 +18,8 @@ local TweenService = game:GetService("TweenService")
 
 -- ================= CONFIG =================
 local WEBHOOK = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
-local MIN_SERVER_TIME = 30 -- tempo mínimo antes de trocar
-local GUI_OFFSET_Y = 50 -- distância do topo
+local MIN_SERVER_TIME = 30 
+local GUI_OFFSET_Y = 50 
 
 -- ================= CONTADORES =================
 getgenv().FruitCount = 0
@@ -28,16 +29,32 @@ local enteredServerAt = tick()
 local hopping = false
 local lastHop = 0
 
--- ================= WEBHOOK SAFE =================
+-- ================= WEBHOOK CORRIGIDO (DELTA) =================
 local function sendWebhook(msg)
     if WEBHOOK == "" then return end
-    pcall(function()
-        HttpService:PostAsync(
-            WEBHOOK,
-            HttpService:JSONEncode({ content = msg }),
-            Enum.HttpContentType.ApplicationJson
-        )
-    end)
+    
+    -- Ajuste automático para Proxy (resolve bloqueio do Discord)
+    local proxyURL = WEBHOOK:gsub("discord.com", "webhook.lewisakura.moe")
+    
+    -- Detecta a função do Delta/Executores
+    local req = (syn and syn.request) or request or http_request or (http and http.request)
+    
+    if req then
+        pcall(function()
+            req({
+                Url = proxyURL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode({
+                    content = msg,
+                    username = "Supreme Hub Fruit"
+                })
+            })
+        end)
+    else
+        -- Fallback simples para debug
+        warn("Executor não suporta 'request'")
+    end
 end
 
 sendWebhook("🚀 SUPREME HUB MOBILE INICIADO COM GUI")
@@ -135,7 +152,7 @@ task.spawn(function()
     local hrp = char:WaitForChild("HumanoidRootPart")
     local humanoid = char:WaitForChild("Humanoid")
 
-    task.wait(3) -- delay mobile seguro
+    task.wait(3) 
 
     while task.wait(6) do
         if not getgenv().FruitScript then return end
@@ -143,7 +160,6 @@ task.spawn(function()
         local encontrou = false
         local guardou = false
 
-        -- timer GUI
         local tempoNoServer = math.floor(tick() - enteredServerAt)
         lblTimer.Text = "⏳ Tempo no server: "..tempoNoServer.."s"
 
@@ -153,13 +169,11 @@ task.spawn(function()
                 getgenv().FruitCount += 1
                 lblCollected.Text = "🍏 Coletadas: "..getgenv().FruitCount
 
-                -- puxa fruta
                 tool.Handle.CFrame = hrp.CFrame + Vector3.new(0,3,0)
                 task.wait(0.5)
                 humanoid:EquipTool(tool)
                 task.wait(0.6)
 
-                -- tenta guardar
                 local ok = RS.Remotes.CommF_:InvokeServer("StoreFruit", tool.Name)
                 if ok then
                     guardou = true
@@ -172,12 +186,10 @@ task.spawn(function()
                     sendWebhook("⚠ Inventário cheio — aguardando 10s")
                     task.wait(10)
                 end
-
-                task.wait(2) -- bypass humano
+                task.wait(2) 
             end
         end
 
-        -- só server hop se passou tempo mínimo
         if tempoNoServer >= MIN_SERVER_TIME then
             if not encontrou or (encontrou and not guardou) then
                 serverHop()
@@ -186,7 +198,7 @@ task.spawn(function()
     end
 end)
 
--- ================= HEARTBEAT =================
+-- ================= HEARTBEAT (STATUS) =================
 task.spawn(function()
     while task.wait(300) do
         sendWebhook(
