@@ -1,27 +1,32 @@
 --[[ 
-👑 SUPREME HUB V10 - FRUIT FARM MOBILE
-📱 MOBILE SAFE
-📊 CONTADOR
-🛡 BYPASS BÁSICO
+👑 SUPREME HUB V10 MOBILE – GUI FINAL
+📱 Contador + Timer + Webhook + AFK + Server Hop
 ]]
 
 getgenv().FruitScript = true
 
--- SERVICES
+-- ================= SERVICES =================
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
--- CONFIG
+-- ================= CONFIG =================
 local WEBHOOK = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
+local MIN_SERVER_TIME = 30 -- tempo mínimo antes de trocar
+local GUI_OFFSET_Y = 50 -- distância do topo
 
--- CONTADORES
+-- ================= CONTADORES =================
 getgenv().FruitCount = 0
 getgenv().StoredCount = 0
 getgenv().FailCount = 0
+local enteredServerAt = tick()
+local hopping = false
+local lastHop = 0
 
 -- ================= WEBHOOK SAFE =================
 local function sendWebhook(msg)
@@ -35,9 +40,9 @@ local function sendWebhook(msg)
     end)
 end
 
-sendWebhook("📱 SUPREME HUB MOBILE INICIADO")
+sendWebhook("🚀 SUPREME HUB MOBILE INICIADO COM GUI")
 
--- ================= ANTI AFK (MOBILE) =================
+-- ================= ANTI-AFK =================
 player.Idled:Connect(function()
     pcall(function()
         VirtualUser:CaptureController()
@@ -45,24 +50,62 @@ player.Idled:Connect(function()
     end)
 end)
 
--- ================= AUTO PIRATE =================
-task.delay(3, function()
+-- ================= GUI =================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SupremeHubGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 220, 0, 100)
+Frame.Position = UDim2.new(1, -230, 0, GUI_OFFSET_Y)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BackgroundTransparency = 0.3
+Frame.BorderSizePixel = 0
+Frame.Parent = ScreenGui
+
+local function makeLabel(text, posY)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -10, 0, 20)
+    lbl.Position = UDim2.new(0, 5, 0, posY)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.fromRGB(0, 255, 0)
+    lbl.TextScaled = true
+    lbl.Font = Enum.Font.SourceSansBold
+    lbl.Text = text
+    lbl.Parent = Frame
+    return lbl
+end
+
+local lblCollected = makeLabel("🍏 Coletadas: 0", 0)
+local lblStored = makeLabel("📦 Guardadas: 0", 20)
+local lblFailed = makeLabel("❌ Falhas: 0", 40)
+local lblTimer = makeLabel("⏳ Aguardando spawn...", 60)
+
+-- ================= ESPERAR PERSONAGEM =================
+local function waitCharacter()
+    local char = player.Character or player.CharacterAdded:Wait()
+    char:WaitForChild("HumanoidRootPart")
+    char:WaitForChild("Humanoid")
+    return char
+end
+
+-- ================= AUTO PIRATA =================
+task.delay(2, function()
     pcall(function()
         RS.Remotes.CommF_:InvokeServer("SetTeam", "Pirates")
+        sendWebhook("🏴‍☠️ Time Pirata definido")
     end)
 end)
 
--- ================= SERVER HOP (SAFE) =================
-local hopping = false
-local lastHop = 0
-
+-- ================= SERVER HOP =================
 local function serverHop()
     if hopping then return end
-    if tick() - lastHop < 15 then return end -- bypass
+    if tick() - lastHop < 20 then return end
     hopping = true
     lastHop = tick()
 
-    sendWebhook("🔄 Server hop (mobile safe)")
+    sendWebhook("🔄 Server hop iniciado")
 
     local ok, servers = pcall(function()
         return HttpService:JSONDecode(
@@ -88,62 +131,62 @@ end
 
 -- ================= LOOP PRINCIPAL =================
 task.spawn(function()
-    while task.wait(6) do -- MOBILE DELAY
-        if not getgenv().FruitScript then return end
+    local char = waitCharacter()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local humanoid = char:WaitForChild("Humanoid")
 
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        if not (hrp and humanoid) then continue end
+    task.wait(3) -- delay mobile seguro
+
+    while task.wait(6) do
+        if not getgenv().FruitScript then return end
 
         local encontrou = false
         local guardou = false
 
-        for _, tool in pairs(workspace:GetChildren()) do
-            if tool:IsA("Tool")
-            and tool:FindFirstChild("Handle")
-            and tool.Name:lower():find("fruit") then
+        -- timer GUI
+        local tempoNoServer = math.floor(tick() - enteredServerAt)
+        lblTimer.Text = "⏳ Tempo no server: "..tempoNoServer.."s"
 
+        for _, tool in pairs(workspace:GetChildren()) do
+            if tool:IsA("Tool") and tool:FindFirstChild("Handle") and tool.Name:lower():find("fruit") then
                 encontrou = true
                 getgenv().FruitCount += 1
+                lblCollected.Text = "🍏 Coletadas: "..getgenv().FruitCount
 
-                -- PUXA
+                -- puxa fruta
                 tool.Handle.CFrame = hrp.CFrame + Vector3.new(0,3,0)
                 task.wait(0.5)
-
                 humanoid:EquipTool(tool)
                 task.wait(0.6)
 
-                -- STORE
-                local ok = RS.Remotes.CommF_:InvokeServer(
-                    "StoreFruit",
-                    tool.Name
-                )
-
+                -- tenta guardar
+                local ok = RS.Remotes.CommF_:InvokeServer("StoreFruit", tool.Name)
                 if ok then
                     guardou = true
                     getgenv().StoredCount += 1
-                    sendWebhook("✅ Guardada: "..tool.Name.." | Total: "..getgenv().StoredCount)
+                    lblStored.Text = "📦 Guardadas: "..getgenv().StoredCount
+                    sendWebhook("✅ Guardada: "..tool.Name)
                 else
                     getgenv().FailCount += 1
-                    sendWebhook("⚠ Inventário cheio | Falhas: "..getgenv().FailCount)
+                    lblFailed.Text = "❌ Falhas: "..getgenv().FailCount
+                    sendWebhook("⚠ Inventário cheio — aguardando 10s")
                     task.wait(10)
                 end
 
-                task.wait(2) -- BYPASS HUMANO
+                task.wait(2) -- bypass humano
             end
         end
 
-        -- DECISÃO
-        if not encontrou then
-            serverHop()
-        elseif encontrou and not guardou then
-            serverHop()
+        -- só server hop se passou tempo mínimo
+        if tempoNoServer >= MIN_SERVER_TIME then
+            if not encontrou or (encontrou and not guardou) then
+                serverHop()
+            end
         end
     end
 end)
 
--- ================= STATUS =================
+-- ================= HEARTBEAT =================
 task.spawn(function()
     while task.wait(300) do
         sendWebhook(
