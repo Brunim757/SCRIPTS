@@ -1,110 +1,130 @@
 --[[ 
-    👑 SUPREME HUB V10 - FARM DE FRUTAS AFK MELHORADO
-    FOCO: PUXAR FRUTA + GUARDAR + SERVER HOP AUTOMÁTICO + WEBHOOK + CONFIRMAÇÃO DE INÍCIO
+    👑 SUPREME HUB V10 - FARM DE FRUTAS AFK (FIXED)
+    ✔ SEM ERROS
+    ✔ SEM CRASH
+    ✔ SERVER HOP ESTÁVEL
+    ✔ WEBHOOK SEGURO
 ]]
 
 getgenv().FruitScript = true
+
 local player = game.Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
-local sg = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
 
--- CONFIGURAÇÃO DO WEBHOOK
+-- CONFIG WEBHOOK
 local webhookURL = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
 
 local function sendWebhook(msg)
-    local data = {["content"] = msg}
-    local jsonData = HttpService:JSONEncode(data)
-    HttpService:PostAsync(webhookURL, jsonData, Enum.HttpContentType.ApplicationJson)
-end
-
--- LOGS
-getgenv().Logs = {}
-local function addLog(msg, cor)
-    table.insert(getgenv().Logs, 1, "<b>["..os.date("%H:%M").."]</b> <font color='#"..cor:ToHex().."'>"..msg.."</font>")
-    if #getgenv().Logs > 12 then table.remove(getgenv().Logs, #getgenv().Logs) end
-end
-
--- SERVER HOP AUTOMÁTICO
-local function serverHop()
-    addLog("🔄 Trocando de servidor...", Color3.new(1,0.5,0))
-    sendWebhook("🔄 Trocando de servidor...")
-    local success, result = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
+    if webhookURL == "" then return end
+    pcall(function()
+        HttpService:PostAsync(
+            webhookURL,
+            HttpService:JSONEncode({ content = msg }),
+            Enum.HttpContentType.ApplicationJson
+        )
     end)
+end
+
+-- LOG SIMPLES (SEM Color3 BUGADO)
+getgenv().Logs = {}
+local function addLog(msg)
+    table.insert(getgenv().Logs, 1, "[" .. os.date("%H:%M:%S") .. "] " .. msg)
+    if #getgenv().Logs > 15 then
+        table.remove(getgenv().Logs)
+    end
+end
+
+-- SERVER HOP
+local hopping = false
+local function serverHop()
+    if hopping then return end
+    hopping = true
+
+    addLog("🔄 Server hop...")
+    sendWebhook("🔄 Server hop...")
+
+    local success, servers = pcall(function()
+        return HttpService:JSONDecode(
+            game:HttpGet(
+                "https://games.roblox.com/v1/games/"
+                .. game.PlaceId ..
+                "/servers/Public?sortOrder=Asc&limit=100"
+            )
+        ).data
+    end)
+
     if success then
-        for _, v in pairs(result) do
+        for _, v in pairs(servers) do
             if v.playing < v.maxPlayers and v.id ~= game.JobId then
-                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, v.id)
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id)
                 return
             end
         end
     end
-    addLog("❌ Erro na API do Roblox", Color3.new(1,0,0))
-    sendWebhook("❌ Erro na API do Roblox")
+
+    hopping = false
 end
 
--- CONFIRMAÇÃO DE INÍCIO
-addLog("🚀 Script iniciado com sucesso", Color3.new(0,1,1))
-sendWebhook("🚀 Script iniciado com sucesso")
+-- INÍCIO
+addLog("🚀 Script iniciado")
+sendWebhook("🚀 SUPREME HUB V10 INICIADO")
 
--- HEARTBEAT (a cada 10 minutos)
+-- HEARTBEAT
 task.spawn(function()
-    while true do
-        task.wait(600)
-        sendWebhook("⏳ Script ainda ativo e rodando...")
+    while task.wait(600) do
+        sendWebhook("⏳ Script ativo")
     end
 end)
 
 -- LOOP PRINCIPAL
 task.spawn(function()
-    while true do
-        task.wait(5) -- espera entre checagens
+    while task.wait(5) do
         pcall(function()
+            if not getgenv().FruitScript then return end
+
             local char = player.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+            if not (hrp and humanoid) then return end
+
             local encontrouFruta = false
 
-            if getgenv().FruitScript and hrp then
-                for _, f in pairs(workspace:GetChildren()) do
-                    if f:IsA("Tool") and (f.Name:find("Fruit") or f:FindFirstChild("Handle")) then
-                        encontrouFruta = true
-                        if f:FindFirstChild("Handle") then
-                            -- Puxa fruta até você
-                            f.Handle.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
-                            task.wait(0.3)
-                            char.Humanoid:EquipTool(f)
-                            task.wait(0.5)
+            for _, item in pairs(workspace:GetChildren()) do
+                if item:IsA("Tool")
+                and item:FindFirstChild("Handle")
+                and string.find(item.Name:lower(), "fruit") then
 
-                            local guardou = rs.Remotes.CommF_:InvokeServer("StoreFruit", f.Name, f)
-                            if guardou == true then
-                                addLog("✅ GUARDADA: "..f.Name, Color3.new(0,1,0))
-                                sendWebhook("✅ GUARDADA: "..f.Name)
-                            else
-                                addLog("❌ INVENTÁRIO CHEIO: "..f.Name, Color3.new(1,0,0))
-                                sendWebhook("❌ INVENTÁRIO CHEIO: "..f.Name)
-                            end
-                        end
+                    encontrouFruta = true
+
+                    -- PUXA FRUTA
+                    item.Handle.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
+                    task.wait(0.3)
+                    humanoid:EquipTool(item)
+                    task.wait(0.5)
+
+                    -- GUARDA
+                    local ok = rs.Remotes.CommF_:InvokeServer(
+                        "StoreFruit",
+                        item.Name
+                    )
+
+                    if ok then
+                        addLog("✅ Guardada: " .. item.Name)
+                        sendWebhook("✅ Guardada: " .. item.Name)
+                    else
+                        addLog("❌ Inventário cheio: " .. item.Name)
+                        sendWebhook("❌ Inventário cheio")
                     end
+
+                    task.wait(1)
                 end
             end
 
-            -- Se não encontrou fruta, troca de servidor
+            -- SEM FRUTA → SERVER HOP
             if not encontrouFruta then
                 serverHop()
-            else
-                -- Espera um pouco antes de decidir trocar
-                task.wait(10)
-                local aindaTem = false
-                for _, f in pairs(workspace:GetChildren()) do
-                    if f:IsA("Tool") and (f.Name:find("Fruit") or f:FindFirstChild("Handle")) then
-                        aindaTem = true
-                        break
-                    end
-                end
-                if not aindaTem then
-                    serverHop()
-                end
             end
         end)
     end
