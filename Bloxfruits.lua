@@ -10,7 +10,7 @@ local sg = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 
 -- CONFIGURAÇÃO DO WEBHOOK
-local webhookURL = "COLOQUE_AQUI_SEU_WEBHOOK"
+local webhookURL = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
 
 local function sendWebhook(msg)
     local data = {["content"] = msg}
