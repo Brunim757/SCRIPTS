@@ -1,146 +1,132 @@
 --[[ 
-👑 SUPREME HUB V10 – INSTANT MAGNET
-⚡ Coleta Instantânea (Sem Delay para Drops)
+👑 SUPREME HUB V12 – MOBILE EDITION (DRAGGABLE BALL)
+📱 Menu Lateral + Aba Update + Botão Bolinha Flutuante
 ]]
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
-local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
 
 getgenv().SupremeConfig = {
     Enabled = false,
-    Method = "Magnet",
-    Webhook = "https://discord.com" -- Coloque seu Webhook aqui
+    FactoryFarm = true,
+    Webhook = "https://discord.com/api/webhooks/1466207661639864362/E8Emrn_rC15_LJRjZuE0tM3y7JdsbvA8_vBDofO0OWnQ5Batq7KlqxuhwiCXx9cwhsSt"
 }
 
--- ================= NOTIFICADOR =================
-local function Notify(msg)
-    local notifyGui = player.PlayerGui:FindFirstChild("SupremeNotify") or Instance.new("ScreenGui", player.PlayerGui)
-    notifyGui.Name = "SupremeNotify"
-    local label = Instance.new("TextLabel", notifyGui)
-    label.Size = UDim2.new(0, 280, 0, 35)
-    label.Position = UDim2.new(0.5, -140, 0, 30)
-    label.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    label.TextColor3 = Color3.fromRGB(0, 255, 150)
-    label.Text = "🍎 " .. msg
-    label.Font = Enum.Font.SourceSansBold
-    label.TextSize = 16
-    Instance.new("UICorner", label)
-    task.delay(2, function() if label then label:Destroy() end end)
+-- ================= FUNÇÃO ARRASTAR (MOBILE SAFE) =================
+local function makeDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    frame.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
 end
 
--- ================= WEBHOOK PROXY =================
-local function sendWebhook(msg)
-    if getgenv().SupremeConfig.Webhook == "" or getgenv().SupremeConfig.Webhook == "https://discord.com" then return end
-    local proxyURL = getgenv().SupremeConfig.Webhook:gsub("discord.com", "webhook.lewisakura.moe")
-    local req = (syn and syn.request) or request or http_request
-    if req then
-        pcall(function()
-            req({
-                Url = proxyURL,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode({content = msg, username = "Supreme Instant"})
-            })
+-- ================= GUI CUSTOM V12 =================
+local sg = Instance.new("ScreenGui", player.PlayerGui); sg.ResetOnSpawn = false; sg.Name = "SupremeHub"
+
+-- Criando a Bolinha (Minimizado)
+local ball = Instance.new("Frame", sg)
+ball.Size = UDim2.new(0, 50, 0, 50); ball.Position = UDim2.new(0, 10, 0.5, 0)
+ball.BackgroundColor3 = Color3.fromRGB(20, 20, 20); ball.Visible = false
+ball.ZIndex = 10; Instance.new("UICorner", ball).CornerRadius = UDim.new(1, 0)
+local ballStroke = Instance.new("UIStroke", ball); ballStroke.Color = Color3.fromRGB(0, 255, 150); ballStroke.Thickness = 2
+local ballIcon = Instance.new("TextLabel", ball)
+ballIcon.Size = UDim2.new(1, 0, 1, 0); ballIcon.Text = "👑"; ballIcon.TextColor3 = Color3.new(1,1,1); ballIcon.TextSize = 25; ballIcon.BackgroundTransparency = 1
+local ballBtn = Instance.new("TextButton", ball)
+ballBtn.Size = UDim2.new(1, 0, 1, 0); ballBtn.BackgroundTransparency = 1; ballBtn.Text = ""
+
+-- Menu Principal
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, 350, 0, 250); main.Position = UDim2.new(0.5, -175, 0.4, 0)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); main.BorderSizePixel = 0
+Instance.new("UICorner", main); Instance.new("UIStroke", main).Color = Color3.fromRGB(0, 255, 150)
+
+makeDraggable(main)
+makeDraggable(ball)
+
+-- Menu Lateral e Conteúdo
+local menu = Instance.new("Frame", main); menu.Size = UDim2.new(0, 100, 1, 0); menu.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Instance.new("UICorner", menu)
+local content = Instance.new("Frame", main); content.Size = UDim2.new(1, -110, 1, -10); content.Position = UDim2.new(0, 105, 0, 5); content.BackgroundTransparency = 1
+
+local function clear() for _, v in pairs(content:GetChildren()) do v:Destroy() end end
+
+local function showMain()
+    clear()
+    local l = Instance.new("UIListLayout", content); l.Padding = UDim.new(0,8)
+    local function createTgl(txt, cfg)
+        local b = Instance.new("TextButton", content)
+        b.Size = UDim2.new(1, 0, 0, 40); b.BackgroundColor3 = getgenv().SupremeConfig[cfg] and Color3.fromRGB(0,150,0) or Color3.fromRGB(150,0,0)
+        b.Text = txt..": "..(getgenv().SupremeConfig[cfg] and "ON" or "OFF"); b.TextColor3 = Color3.new(1,1,1); Instance.new("UICorner", b)
+        b.MouseButton1Click:Connect(function()
+            getgenv().SupremeConfig[cfg] = not getgenv().SupremeConfig[cfg]
+            b.Text = txt..": "..(getgenv().SupremeConfig[cfg] and "ON" or "OFF")
+            b.BackgroundColor3 = getgenv().SupremeConfig[cfg] and Color3.fromRGB(0,150,0) or Color3.fromRGB(150,0,0)
         end)
     end
+    createTgl("FRUIT MAGNET", "Enabled")
+    createTgl("AUTO FACTORY", "FactoryFarm")
+    
+    local min = Instance.new("TextButton", content); min.Size = UDim2.new(1, 0, 0, 40); min.Text = "MINIMIZAR HUB"; min.BackgroundColor3 = Color3.fromRGB(40,40,40); min.TextColor3 = Color3.new(1,1,1); Instance.new("UICorner", min)
+    min.MouseButton1Click:Connect(function() main.Visible = false; ball.Visible = true end)
 end
 
--- ================= GUI NATIVA =================
-local sg = Instance.new("ScreenGui", player.PlayerGui)
-sg.Name = "SupremeCustomGUI"
-sg.ResetOnSpawn = false
-
-local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 200, 0, 220)
-main.Position = UDim2.new(0.5, -100, 0.3, 0)
-main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-main.Active, main.Draggable = true, true
-Instance.new("UICorner", main)
-
-local function createBtn(name, pos, color, callback)
-    local btn = Instance.new("TextButton", main)
-    btn.Size = UDim2.new(0.9, 0, 0, 35)
-    btn.Position = UDim2.new(0.05, 0, 0, pos)
-    btn.Text, btn.BackgroundColor3 = name, color
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.SourceSansBold
-    btn.MouseButton1Click:Connect(function() callback(btn) end)
-    Instance.new("UICorner", btn)
-    return btn
+local function showUpdates()
+    clear()
+    local log = Instance.new("TextLabel", content); log.Size = UDim2.new(1, 0, 1, 0); log.BackgroundTransparency = 1; log.TextColor3 = Color3.new(0.8, 0.8, 0.8); log.TextSize = 13; log.Font = "SourceSansItalic"; log.TextXAlignment = "Left"; log.TextYAlignment = "Top"; log.TextWrapped = true
+    log.Text = "🚀 [VERSÃO V12]\n\n• BOTÃO BOLINHA: Arraste o menu ou a bolinha para qualquer lugar.\n• DRAGGABLE SYSTEM: Otimizado para Delta Mobile.\n• AUTO FACTORY: Ataca o Core no Sea 2.\n• MAGNET: Coleta instantânea de qualquer fruta."
 end
 
-local powerBtn = createBtn("STATUS: OFF", 45, Color3.fromRGB(150, 50, 50), function(btn)
-    getgenv().SupremeConfig.Enabled = not getgenv().SupremeConfig.Enabled
-    btn.Text = getgenv().SupremeConfig.Enabled and "STATUS: ON" or "STATUS: OFF"
-    btn.BackgroundColor3 = getgenv().SupremeConfig.Enabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
-end)
+local b1 = Instance.new("TextButton", menu); b1.Size = UDim2.new(1, -10, 0, 35); b1.Position = UDim2.new(0, 5, 0, 10); b1.Text = "INÍCIO"; b1.BackgroundColor3 = Color3.fromRGB(40,40,40); b1.TextColor3 = Color3.new(1,1,1); Instance.new("UICorner", b1); b1.MouseButton1Click:Connect(showMain)
+local b2 = Instance.new("TextButton", menu); b2.Size = UDim2.new(1, -10, 0, 35); b2.Position = UDim2.new(0, 5, 0, 50); b2.Text = "UPDATE"; b2.BackgroundColor3 = Color3.fromRGB(40,40,40); b2.TextColor3 = Color3.new(1,1,1); Instance.new("UICorner", b2); b2.MouseButton1Click:Connect(showUpdates)
 
-createBtn("METODO: MAGNET", 90, Color3.fromRGB(50, 50, 50), function(btn)
-    getgenv().SupremeConfig.Method = (getgenv().SupremeConfig.Method == "Magnet" and "Tween" or "Magnet")
-    btn.Text = "METODO: " .. getgenv().SupremeConfig.Method:upper()
-end)
+ballBtn.MouseButton1Click:Connect(function() main.Visible = true; ball.Visible = false end)
+showMain()
 
-local webInput = Instance.new("TextBox", main)
-webInput.Size = UDim2.new(0.9, 0, 0, 30); webInput.Position = UDim2.new(0.05, 0, 0, 135)
-webInput.PlaceholderText = "Webhook URL"; webInput.Text = getgenv().SupremeConfig.Webhook
-webInput.BackgroundColor3 = Color3.fromRGB(5, 5, 5); webInput.TextColor3 = Color3.new(1,1,1)
-webInput.TextScaled = true
-webInput.FocusLost:Connect(function() getgenv().SupremeConfig.Webhook = webInput.Text end)
-
--- ================= LÓGICA DE VELOCIDADE MÁXIMA =================
+-- ================= LÓGICA DE COLETA & FÁBRICA =================
 task.spawn(function()
     while true do
-        task.wait(0.1) -- Verificação ultra rápida
+        task.wait(0.1)
         if getgenv().SupremeConfig.Enabled then
-            local char = player.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            
-            if hrp then
-                for _, tool in pairs(workspace:GetChildren()) do
-                    if tool:IsA("Tool") and tool:FindFirstChild("Handle") and tool.Name:lower():find("fruit") then
-                        local fruitName = tool.Name
-                        Notify("⚡ PEGANDO AGORA: " .. fruitName)
-                        
-                        -- MAGNET INSTANTÂNEO
-                        if getgenv().SupremeConfig.Method == "Magnet" then
-                            tool.Handle.CanCollide = false
-                            -- Força a posição continuamente até equipar
-                            local grabTime = tick()
-                            repeat
-                                tool.Handle.CFrame = hrp.CFrame
-                                char.Humanoid:EquipTool(tool)
-                                task.wait()
-                            until tool.Parent == char or tick() - grabTime > 1.5
-                        else
-                            -- TWEEN RÁPIDO
-                            local dist = (hrp.Position - tool.Handle.Position).Magnitude
-                            local tw = TweenService:Create(hrp, TweenInfo.new(dist/100, Enum.EasingStyle.Linear), {CFrame = tool.Handle.CFrame})
-                            tw:Play()
-                            tw.Completed:Wait()
-                            char.Humanoid:EquipTool(tool)
-                        end
-
-                        -- TENTA GUARDAR EM SEGUNDO PLANO PARA NÃO PARAR O LOOP
-                        task.spawn(function()
-                            task.wait(0.3) -- Espera mínima para o server aceitar
-                            if RS.Remotes.CommF_:InvokeServer("StoreFruit", fruitName) then
-                                sendWebhook("✅ **Guardada:** " .. fruitName)
-                                Notify("Sucesso: " .. fruitName)
-                            else
-                                sendWebhook("⚠️ **Falha/Cheio:** " .. fruitName)
-                            end
-                        end)
+            for _, tool in pairs(workspace:GetChildren()) do
+                if tool:IsA("Tool") and tool:FindFirstChild("Handle") and tool.Name:lower():find("fruit") then
+                    local char = player.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        tool.Handle.CanCollide = false
+                        repeat tool.Handle.CFrame = char.HumanoidRootPart.CFrame; char.Humanoid:EquipTool(tool); task.wait() until tool.Parent == char or not getgenv().SupremeConfig.Enabled
+                        task.spawn(function() task.wait(0.6); RS.Remotes.CommF_:InvokeServer("StoreFruit", tool.Name) end)
                     end
                 end
             end
         end
+        if getgenv().SupremeConfig.FactoryFarm then
+            local f = workspace:FindFirstChild("Factory"); local core = f and f:FindFirstChild("Core")
+            if core and core:FindFirstChild("Humanoid") and core.Humanoid.Health > 0 then
+                player.Character.HumanoidRootPart.CFrame = core.CFrame * CFrame.new(0, 15, 0)
+                RS.Remotes.CommF_:InvokeServer("Attack", core)
+            end
+        end
     end
 end)
-
--- Anti-AFK
-player.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end)
-Notify("Supreme Instant Hub Pronto!")
