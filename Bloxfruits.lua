@@ -23,78 +23,113 @@ local function avisar(msg, cor)
     game:GetService("Debris"):AddItem(label, 3)
 end
 
--- 2. GUI (Ajustada para Blox Fruits)
+-- 2. SERVER HOP
+local function serverHop()
+    local HttpService = game:GetService("HttpService")
+    local TeleportService = game:GetService("TeleportService")
+    local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
+    for _, v in pairs(servers) do
+        if v.playing < v.maxTokens and v.id ~= game.JobId then
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id)
+            break
+        end
+    end
+end
+
+-- 3. GUI COM BOLINHA E MINIMIZAR
 local function criarPainel()
     local sg = Instance.new("ScreenGui", player.PlayerGui)
-    sg.Name = "PainelMovel"
+    sg.Name = "PainelPro"
+    
     local main = Instance.new("Frame", sg)
-    main.Size = UDim2.new(0, 180, 0, 240)
+    main.Size = UDim2.new(0, 180, 0, 280)
     main.Position = UDim2.new(0.1, 0, 0.4, 0)
-    main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     main.Active = true
-    main.Draggable = true 
+    main.Draggable = true
 
-    local function criarBotao(texto, pos, var)
+    local ball = Instance.new("TextButton", sg)
+    ball.Size = UDim2.new(0, 50, 0, 50)
+    ball.Position = main.Position
+    ball.Visible = false
+    ball.Text = "OPEN"
+    ball.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    ball.TextColor3 = Color3.new(1, 1, 1)
+    local corner = Instance.new("UICorner", ball)
+    corner.CornerRadius = UDim.new(1, 0)
+    ball.Draggable = true
+
+    local close = Instance.new("TextButton", main)
+    close.Size = UDim2.new(0, 30, 0, 30)
+    close.Position = UDim2.new(1, -30, 0, 0)
+    close.Text = "X"
+    close.TextColor3 = Color3.new(1, 0, 0)
+    close.BackgroundTransparency = 1
+    
+    close.MouseButton1Click:Connect(function() main.Visible = false ball.Position = main.Position ball.Visible = true end)
+    ball.MouseButton1Click:Connect(function() main.Visible = true ball.Visible = false main.Position = ball.Position end)
+
+    local function criarBotao(texto, pos, var, action)
         local btn = Instance.new("TextButton", main)
         btn.Size = UDim2.new(0, 160, 0, 40)
         btn.Position = pos
-        btn.Text = texto .. ": OFF"
-        btn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+        btn.Text = texto .. (var and ": OFF" or "")
+        btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
         btn.TextColor3 = Color3.new(1, 1, 1)
         btn.MouseButton1Click:Connect(function()
-            getgenv()[var] = not getgenv()[var]
-            btn.Text = texto .. (getgenv()[var] and ": ON" or ": OFF")
-            btn.BackgroundColor3 = getgenv()[var] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+            if var then
+                getgenv()[var] = not getgenv()[var]
+                btn.Text = texto .. (getgenv()[var] and ": ON" or ": OFF")
+                btn.BackgroundColor3 = getgenv()[var] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+            elseif action then action() end
         end)
     end
+
     criarBotao("FRUTAS", UDim2.new(0, 10, 0, 40), "FruitScript")
     criarBotao("BAÚS", UDim2.new(0, 10, 0, 90), "ChestFarm")
     criarBotao("MOBS", UDim2.new(0, 10, 0, 140), "MobFarm")
+    criarBotao("SERVER HOP", UDim2.new(0, 10, 0, 190), nil, serverHop)
 end
 
--- 3. LOOP PRINCIPAL (CORREÇÃO BLOX FRUITS)
+-- 4. LOOP PRINCIPAL
 task.spawn(function()
     criarPainel()
     while true do
         task.wait(0.1)
         pcall(function()
             local char = player.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local hrp = char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
 
-            -- FARM MOBS (Usa o item na mão)
+            -- FARM MOBS (Ajustado para ataque de FRENTE)
             if getgenv().MobFarm then
-                -- No Blox Fruits, os inimigos ficam na pasta 'Enemies' ou direto no Workspace
                 local inimigos = workspace:FindFirstChild("Enemies") or workspace
                 for _, m in pairs(inimigos:GetChildren()) do
-                    if m:IsA("Model") and m:FindFirstChild("Humanoid") and m.Humanoid.Health > 0 then
-                        repeat
-                            if not getgenv().MobFarm then break end
-                            -- Teleporta atrás/cima do mob para não morrer
-                            hrp.CFrame = m.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
-                            -- Ataca com o que estiver na mão
-                            vu:CaptureController()
-                            vu:ClickButton1(Vector2.new(850, 520))
-                            task.wait(0.1)
-                        until m.Humanoid.Health <= 0 or not getgenv().MobFarm
+                    if m:FindFirstChild("Humanoid") and m.Humanoid.Health > 0 and m:FindFirstChild("HumanoidRootPart") then
+                        -- Teleporta para FRENTE do mob (não em cima)
+                        hrp.CFrame = m.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5) -- 5 studs de distância frontal
+                        hrp.CFrame = CFrame.new(hrp.Position, m.HumanoidRootPart.Position) -- Aponta para o mob
+                        
+                        local tool = char:FindFirstChildOfClass("Tool")
+                        if tool then tool:Activate() end
+                        vu:Button1Down(Vector2.new(0,0))
+                        break
                     end
                 end
             end
 
-            -- FARM BAÚS (Busca profunda)
+            -- FARM BAÚS (Teleporte Seguro)
             if getgenv().ChestFarm then
                 for _, v in pairs(workspace:GetDescendants()) do
                     if v:IsA("TouchTransmitter") and v.Parent.Name:find("Chest") then
-                        local bau = v.Parent
-                        if bau:IsA("BasePart") then
-                            hrp.CFrame = bau.CFrame
-                            task.wait(0.5)
-                        end
+                        hrp.CFrame = v.Parent.CFrame
+                        task.wait(1.8) -- Velocidade reduzida para não bugar
+                        break
                     end
                 end
             end
 
-            -- SNIPER FRUTAS
+            -- FRUTAS (Auto-Store)
             if getgenv().FruitScript then
                 for _, f in pairs(workspace:GetChildren()) do
                     if f:IsA("Tool") and (f.Name:find("Fruit") or f:FindFirstChild("Handle")) then
@@ -102,6 +137,7 @@ task.spawn(function()
                         task.wait(0.5)
                         char.Humanoid:EquipTool(f)
                         rs.Remotes.CommF_:InvokeServer("StoreFruit", f.Name, f)
+                        avisar("Fruta Guardada!", Color3.new(0,1,0))
                     end
                 end
             end
