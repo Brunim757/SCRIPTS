@@ -1,5 +1,5 @@
--- Script Completo: Fruit Sniper Inteligente + Auto Chest
--- Teleporta frutas e baús até o jogador
+-- Script Completo: Fruit Sniper Inteligente + Auto Chest Teleport
+-- Teleporta frutas até você e teleporta você até os baús
 
 local player = game.Players.LocalPlayer
 local hrp = player.Character:WaitForChild("HumanoidRootPart")
@@ -7,7 +7,7 @@ local hrp = player.Character:WaitForChild("HumanoidRootPart")
 -- Lista de frutas já coletadas
 local collectedFruits = {}
 
--- 🍇 Função para puxar frutas
+-- 🍇 Função para frutas
 function FruitSniper()
     for _, fruit in pairs(workspace:GetChildren()) do
         if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") then
@@ -25,16 +25,20 @@ function FruitSniper()
     end
 end
 
--- 💰 Função para puxar baús
+-- 💰 Função para baús (teleporta você até cada baú)
 function AutoChest()
     for _, chest in pairs(workspace:GetChildren()) do
         if chest.Name:lower():find("chest") then
+            local target = nil
             if chest:IsA("Model") and chest:FindFirstChild("PrimaryPart") then
-                chest.PrimaryPart.CFrame = hrp.CFrame + Vector3.new(math.random(-5,5),0,math.random(-5,5))
-                print("💰 Baú puxado:", chest.Name)
+                target = chest.PrimaryPart
             elseif chest:FindFirstChild("HumanoidRootPart") then
-                chest.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(math.random(-5,5),0,math.random(-5,5))
-                print("💰 Baú puxado:", chest.Name)
+                target = chest.HumanoidRootPart
+            end
+            if target then
+                hrp.CFrame = target.CFrame + Vector3.new(0,3,0)
+                wait(0.5) -- pequeno delay para coletar
+                print("💰 Teleportado para baú:", chest.Name)
             end
         end
     end
@@ -43,8 +47,8 @@ end
 -- 🔄 Loop automático
 spawn(function()
     while true do
-        FruitSniper()   -- puxa frutas
-        AutoChest()     -- puxa baús
+        FruitSniper()   -- pega frutas
+        AutoChest()     -- teleporta para baús
         wait(5)         -- intervalo para não travar
     end
 end)
