@@ -163,13 +163,13 @@ task.spawn(function()
                 for _, v in pairs(workspace:GetChildren()) do
                     if v.Name:find("Chest") and v:IsA("Part") then
                         char.HumanoidRootPart.CFrame = v.CFrame
-                        task.wait(0.2)
+                        task.wait(1.0)
                     end
                 end
                 for _, v in pairs(workspace:GetDescendants()) do
                     if v:IsA("TouchTransmitter") and v.Parent.Name:find("Chest") then
                         char.HumanoidRootPart.CFrame = v.Parent.CFrame
-                        task.wait(0.2)
+                        task.wait(1.0)
                     end
                 end
             end
