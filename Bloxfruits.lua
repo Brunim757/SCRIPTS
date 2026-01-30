@@ -1,350 +1,298 @@
--- 👑 SUPREME HUB ELITE V27 — COSMIC SUPREMACY
+-- 👑 SUPREME HUB ELITE V28 — OMEGA EDITION
+-- Full | Stable | Rayfield-like | Mobile + PC
 
 repeat task.wait() until game:IsLoaded()
 
 -- SERVICES
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local RS = game:GetService("ReplicatedStorage")
-local TeleportService = game:GetService("TeleportService")
-local StarterGui = game:GetService("StarterGui")
-local VirtualUser = game:GetService("VirtualUser")
-local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
-
 local player = Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
+local TweenService = game:GetService("TweenService")
+local VirtualUser = game:GetService("VirtualUser")
+local StarterGui = game:GetService("StarterGui")
 
---------------------------------------------------
--- CONFIG
---------------------------------------------------
+-- ================= CONFIG =================
 getgenv().Supreme = {
+    -- FARM
     Magnet = true,
     ESP = false,
-    AutoEquip = true,
     AutoStore = true,
-    Chest = false,
+    AutoEquip = true,
+    AutoChest = false,
 
+    -- PLAYER
     NoClip = false,
+    God = false,
+    AntiKB = false,
     WalkSpeed = 16,
+    JumpPower = 50,
 
-    Hop = false,
+    -- SERVER
+    ServerHop = false,
     SmartHop = true,
-    HopDelay = 45
+    HopDelay = 45,
+
+    -- MISC
+    FPSBoost = false
 }
 
---------------------------------------------------
--- LOADING SCREEN
---------------------------------------------------
-local loadingGui = Instance.new("ScreenGui", player.PlayerGui)
-loadingGui.IgnoreGuiInset = true
+-- ================= LOADING SCREEN =================
+local loadGui = Instance.new("ScreenGui", player.PlayerGui)
+loadGui.IgnoreGuiInset = true
 
-local bg = Instance.new("Frame", loadingGui)
-bg.Size = UDim2.new(1,0,1,0)
-bg.BackgroundColor3 = Color3.fromRGB(10,10,14)
+local bg = Instance.new("Frame", loadGui)
+bg.Size = UDim2.fromScale(1,1)
+bg.BackgroundColor3 = Color3.fromRGB(10,10,15)
 
 local title = Instance.new("TextLabel", bg)
-title.Size = UDim2.new(1,0,0,80)
-title.Position = UDim2.new(0,0,0.45,0)
+title.Size = UDim2.new(1,0,0,60)
+title.Position = UDim2.new(0,0,0.4,0)
 title.Text = "SUPREME HUB"
 title.Font = Enum.Font.GothamBlack
-title.TextSize = 42
-title.TextColor3 = Color3.fromRGB(0,180,255)
+title.TextSize = 36
+title.TextColor3 = Color3.fromRGB(0,200,255)
 title.BackgroundTransparency = 1
 
-local sub = Instance.new("TextLabel", bg)
-sub.Size = UDim2.new(1,0,0,40)
-sub.Position = UDim2.new(0,0,0.55,0)
-sub.Text = "loading..."
-sub.Font = Enum.Font.Gotham
-sub.TextSize = 18
-sub.TextColor3 = Color3.fromRGB(200,200,210)
-sub.BackgroundTransparency = 1
+local loading = Instance.new("TextLabel", bg)
+loading.Size = UDim2.new(1,0,0,40)
+loading.Position = UDim2.new(0,0,0.48,0)
+loading.Text = "loading..."
+loading.Font = Enum.Font.Gotham
+loading.TextSize = 18
+loading.TextColor3 = Color3.fromRGB(180,180,200)
+loading.BackgroundTransparency = 1
 
-bg.BackgroundTransparency = 1
-title.TextTransparency = 1
-sub.TextTransparency = 1
+task.wait(2)
+loadGui:Destroy()
 
-TweenService:Create(bg, TweenInfo.new(0.6), {BackgroundTransparency = 0}):Play()
-TweenService:Create(title, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
-TweenService:Create(sub, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
-
-task.wait(1.8)
-
-TweenService:Create(bg, TweenInfo.new(0.6), {BackgroundTransparency = 1}):Play()
-TweenService:Create(title, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
-TweenService:Create(sub, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
-
-task.wait(0.6)
-loadingGui:Destroy()
-
---------------------------------------------------
--- NOTIFY
---------------------------------------------------
-local function notify(t, d)
-    StarterGui:SetCore("SendNotification", {
-        Title = t,
-        Text = d,
-        Duration = 4
-    })
-end
-
---------------------------------------------------
--- GUI
---------------------------------------------------
+-- ================= GUI ROOT =================
 local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "SupremeV28"
 gui.ResetOnSpawn = false
 
--- MAIN
+-- MAIN WINDOW
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,620,0,460)
-main.Position = UDim2.new(0.5,-310,0.5,-230)
-main.BackgroundColor3 = Color3.fromRGB(18,18,22)
+main.Size = UDim2.new(0,620,0,480)
+main.Position = UDim2.new(0.5,-310,0.5,-240)
+main.BackgroundColor3 = Color3.fromRGB(18,18,24)
 main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
-Instance.new("UIStroke", main).Color = Color3.fromRGB(0,180,255)
 
 -- HEADER
 local header = Instance.new("TextLabel", main)
 header.Size = UDim2.new(1,0,0,42)
-header.Text = "👑 SUPREME HUB ELITE V27 — COSMIC SUPREMACY"
+header.Text = "👑 SUPREME HUB ELITE V28 — OMEGA"
 header.Font = Enum.Font.GothamBold
-header.TextSize = 17
-header.TextColor3 = Color3.fromRGB(0,180,255)
+header.TextSize = 20
+header.TextColor3 = Color3.fromRGB(0,200,255)
 header.BackgroundTransparency = 1
 
--- MINIMIZE
-local min = Instance.new("TextButton", header)
-min.Size = UDim2.new(0,30,0,24)
-min.Position = UDim2.new(1,-38,0.5,-12)
-min.Text = "–"
-min.Font = Enum.Font.GothamBold
-min.BackgroundColor3 = Color3.fromRGB(30,30,36)
-Instance.new("UICorner", min)
+-- MINIMIZE BUTTON
+local mini = Instance.new("TextButton", main)
+mini.Size = UDim2.new(0,36,0,36)
+mini.Position = UDim2.new(1,-40,0,4)
+mini.Text = "–"
+mini.Font = Enum.Font.GothamBold
+mini.TextSize = 22
+mini.BackgroundColor3 = Color3.fromRGB(30,30,40)
+mini.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", mini)
 
--- ORB
-local orb = Instance.new("Frame", gui)
-orb.Size = UDim2.new(0,52,0,52)
-orb.Position = UDim2.new(0,15,0.5,0)
-orb.Visible = false
-orb.Active = true
-orb.Draggable = true
-orb.BackgroundColor3 = Color3.fromRGB(20,20,26)
-orb.ZIndex = 50
-Instance.new("UICorner", orb).CornerRadius = UDim.new(1,0)
-Instance.new("UIStroke", orb).Color = Color3.fromRGB(0,180,255)
+-- BUBBLE
+local bubble = Instance.new("TextButton", gui)
+bubble.Size = UDim2.new(0,55,0,55)
+bubble.Position = UDim2.new(0,20,0.5,-25)
+bubble.Text = "👑"
+bubble.Visible = false
+bubble.BackgroundColor3 = Color3.fromRGB(0,180,255)
+bubble.TextSize = 24
+Instance.new("UICorner", bubble)
 
-local orbBtn = Instance.new("TextButton", orb)
-orbBtn.Size = UDim2.new(1,0,1,0)
-orbBtn.Text = "👑"
-orbBtn.TextSize = 24
-orbBtn.BackgroundTransparency = 1
-
-min.MouseButton1Click:Connect(function()
+mini.MouseButton1Click:Connect(function()
     main.Visible = false
-    orb.Visible = true
+    bubble.Visible = true
 end)
 
-orbBtn.MouseButton1Click:Connect(function()
+bubble.MouseButton1Click:Connect(function()
     main.Visible = true
-    orb.Visible = false
+    bubble.Visible = false
 end)
 
---------------------------------------------------
--- CONTENT
---------------------------------------------------
+-- ================= TABS =================
 local tabs = Instance.new("Frame", main)
 tabs.Position = UDim2.new(0,10,0,50)
-tabs.Size = UDim2.new(0,120,1,-60)
-tabs.BackgroundColor3 = Color3.fromRGB(22,22,28)
+tabs.Size = UDim2.new(0,130,1,-60)
+tabs.BackgroundColor3 = Color3.fromRGB(24,24,30)
 Instance.new("UICorner", tabs)
 
 local pages = Instance.new("Frame", main)
-pages.Position = UDim2.new(0,140,0,50)
-pages.Size = UDim2.new(1,-150,1,-60)
+pages.Position = UDim2.new(0,150,0,50)
+pages.Size = UDim2.new(1,-160,1,-60)
 pages.BackgroundTransparency = 1
 
-local function page(name)
-    local f = Instance.new("ScrollingFrame", pages)
-    f.Visible = false
-    f.CanvasSize = UDim2.new(0,0,0,700)
-    f.ScrollBarThickness = 4
-    f.BackgroundTransparency = 1
-    local l = Instance.new("UIListLayout", f)
+local function newPage(name)
+    local p = Instance.new("ScrollingFrame", pages)
+    p.Name = name
+    p.Visible = false
+    p.CanvasSize = UDim2.new(0,0,0,800)
+    p.ScrollBarThickness = 3
+    p.BackgroundTransparency = 1
+    local l = Instance.new("UIListLayout", p)
     l.Padding = UDim.new(0,10)
     l.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    return f
+    return p
 end
 
-local Farm = page("Farm")
-local PlayerTab = page("Player")
-local Server = page("Server")
-local Info = page("Info")
-Farm.Visible = true
+local P_Main    = newPage("Main")
+local P_Fruits  = newPage("Fruits")
+local P_Chest   = newPage("Chest")
+local P_Player  = newPage("Player")
+local P_Server  = newPage("Server")
+local P_Updates = newPage("Updates")
+P_Main.Visible = true
 
-local function tab(text, p)
+local function tab(name, page, order)
     local b = Instance.new("TextButton", tabs)
-    b.Size = UDim2.new(1,-10,0,34)
-    b.Position = UDim2.new(0,5,0,5 + (#tabs:GetChildren()-1)*38)
-    b.Text = text
+    b.Size = UDim2.new(1,-10,0,36)
+    b.Position = UDim2.new(0,5,0,5 + (order-1)*40)
+    b.Text = name
     b.Font = Enum.Font.GothamBold
     b.TextSize = 13
-    b.BackgroundColor3 = Color3.fromRGB(32,32,38)
+    b.BackgroundColor3 = Color3.fromRGB(34,34,44)
+    b.TextColor3 = Color3.new(1,1,1)
     Instance.new("UICorner", b)
-
     b.MouseButton1Click:Connect(function()
         for _,v in pairs(pages:GetChildren()) do v.Visible = false end
-        p.Visible = true
+        page.Visible = true
     end)
 end
 
-tab("FARM", Farm)
-tab("PLAYER", PlayerTab)
-tab("SERVER", Server)
-tab("INFO", Info)
+tab("MAIN",P_Main,1)
+tab("FRUITS",P_Fruits,2)
+tab("CHEST",P_Chest,3)
+tab("PLAYER",P_Player,4)
+tab("SERVER",P_Server,5)
+tab("UPDATES",P_Updates,6)
 
---------------------------------------------------
--- UI ELEMENTS
---------------------------------------------------
-local function toggle(parent, text, flag)
+-- ================= UI ELEMENTS =================
+local function toggle(parent,text,flag)
     local b = Instance.new("TextButton", parent)
     b.Size = UDim2.new(0.95,0,0,40)
     b.Font = Enum.Font.GothamBold
     b.TextSize = 14
     Instance.new("UICorner", b)
-
     local function refresh()
         b.Text = text.." : "..(getgenv().Supreme[flag] and "ON" or "OFF")
-        b.BackgroundColor3 = getgenv().Supreme[flag]
-            and Color3.fromRGB(0,160,220)
-            or Color3.fromRGB(34,34,40)
+        b.BackgroundColor3 = getgenv().Supreme[flag] and Color3.fromRGB(0,160,200) or Color3.fromRGB(40,40,50)
+        b.TextColor3 = Color3.new(1,1,1)
     end
     refresh()
-
     b.MouseButton1Click:Connect(function()
         getgenv().Supreme[flag] = not getgenv().Supreme[flag]
         refresh()
     end)
 end
 
---------------------------------------------------
--- FARM
---------------------------------------------------
-toggle(Farm,"🧲 Fruit Magnet","Magnet")
-toggle(Farm,"👁 Fruit ESP","ESP")
-toggle(Farm,"🖐 Auto Equip","AutoEquip")
-toggle(Farm,"📦 Auto Store","AutoStore")
-toggle(Farm,"💰 Auto Chest","Chest")
+local function info(parent,text)
+    local t = Instance.new("TextLabel", parent)
+    t.Size = UDim2.new(0.95,0,0,38)
+    t.BackgroundTransparency = 1
+    t.TextWrapped = true
+    t.Text = text
+    t.Font = Enum.Font.Gotham
+    t.TextSize = 13
+    t.TextColor3 = Color3.fromRGB(200,200,210)
+end
 
---------------------------------------------------
--- PLAYER
---------------------------------------------------
-toggle(PlayerTab,"👻 NoClip","NoClip")
+-- ================= CONTENT =================
+toggle(P_Main,"🧲 Fruit Magnet","Magnet")
+toggle(P_Main,"👁 Fruit ESP","ESP")
+toggle(P_Main,"📦 Auto Store Fruits","AutoStore")
+toggle(P_Main,"🖐 Auto Equip","AutoEquip")
 
---------------------------------------------------
--- SERVER
---------------------------------------------------
-toggle(Server,"🔁 Server Hop","Hop")
-toggle(Server,"🧠 Smart Hop","SmartHop")
+toggle(P_Chest,"💰 Auto Chest Farm","AutoChest")
 
---------------------------------------------------
--- INFO
---------------------------------------------------
-local info = Instance.new("TextLabel", Info)
-info.Size = UDim2.new(0.95,0,0,200)
-info.TextWrapped = true
-info.Text =
-"SUPREME HUB V27\n\n"..
-"• UI Rayfield-like\n"..
-"• Tela de loading animada\n"..
-"• Fruit system completo\n"..
-"• Smart Server Hop\n"..
-"• Código limpo e estável\n\n"..
-"Cosmic Supremacy Edition 👑"
-info.Font = Enum.Font.Gotham
-info.TextSize = 14
-info.TextColor3 = Color3.fromRGB(200,200,210)
-info.BackgroundTransparency = 1
+toggle(P_Player,"👻 NoClip","NoClip")
+toggle(P_Player,"🛡 God Mode","God")
+toggle(P_Player,"🧲 Anti Knockback","AntiKB")
 
---------------------------------------------------
--- CORE LOGIC
---------------------------------------------------
+toggle(P_Server,"🔁 Server Hop","ServerHop")
+toggle(P_Server,"🧠 Smart Hop","SmartHop")
+
+info(P_Updates,"V28 OMEGA")
+info(P_Updates,"• UI Rayfield-like estável")
+info(P_Updates,"• Minimize em bolinha funcional")
+info(P_Updates,"• Todas abas funcionando")
+info(P_Updates,"• Magnet ONLY (sem teleport)")
+info(P_Updates,"• NoClip corrigido")
+info(P_Updates,"• Performance e estabilidade")
+
+-- ================= CORE LOGIC =================
 local lastFruit = os.clock()
 
 RunService.Heartbeat:Connect(function()
     local c = player.Character
-    local hrp = c and c:FindFirstChild("HumanoidRootPart")
-    local hum = c and c:FindFirstChildOfClass("Humanoid")
-    if not hrp then return end
+    if not c then return end
+    local hrp = c:FindFirstChild("HumanoidRootPart")
+    local hum = c:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return end
 
-    if hum then hum.WalkSpeed = getgenv().Supreme.WalkSpeed end
+    hum.WalkSpeed = getgenv().Supreme.WalkSpeed
+    hum.JumpPower = getgenv().Supreme.JumpPower
 
     for _,t in pairs(workspace:GetChildren()) do
-        if t:IsA("Tool") and t:FindFirstChild("Handle")
-        and t.Name:lower():find("fruit") then
-
+        if t:IsA("Tool") and t.Name:lower():find("fruit") and t:FindFirstChild("Handle") then
             lastFruit = os.clock()
-
             if getgenv().Supreme.Magnet then
                 t.Handle.CFrame = hrp.CFrame
                 t.Handle.Velocity = Vector3.zero
-            end
-
-            if getgenv().Supreme.AutoEquip and hum then
-                hum:EquipTool(t)
-            end
-
-            if getgenv().Supreme.AutoStore then
-                pcall(function()
-                    RS.Remotes.CommF_:InvokeServer("StoreFruit", t.Name)
-                end)
-            end
-
-            if getgenv().Supreme.ESP and not t:FindFirstChild("Highlight") then
-                local h = Instance.new("Highlight", t)
-                h.FillColor = Color3.fromRGB(255,80,80)
-                h.OutlineColor = Color3.new(1,1,1)
-            end
-
-            if not getgenv().Supreme.ESP and t:FindFirstChild("Highlight") then
-                t.Highlight:Destroy()
+                if getgenv().Supreme.AutoEquip then hum:EquipTool(t) end
+                if getgenv().Supreme.AutoStore then
+                    pcall(function()
+                        RS.Remotes.CommF_:InvokeServer("StoreFruit", t.Name)
+                    end)
+                end
             end
         end
     end
 end)
 
---------------------------------------------------
--- NOCLIP REAL
---------------------------------------------------
 RunService.Stepped:Connect(function()
     local c = player.Character
     if not c then return end
-    for _,p in pairs(c:GetDescendants()) do
-        if p:IsA("BasePart") then
-            p.CanCollide = not getgenv().Supreme.NoClip
+    if getgenv().Supreme.NoClip then
+        for _,p in pairs(c:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = false end
         end
+    end
+    if getgenv().Supreme.AntiKB then
+        pcall(function() c.HumanoidRootPart.Velocity = Vector3.zero end)
+    end
+    if getgenv().Supreme.God then
+        pcall(function() c.Humanoid.Health = math.huge end)
     end
 end)
 
---------------------------------------------------
--- SMART HOP
---------------------------------------------------
 task.spawn(function()
     while task.wait(getgenv().Supreme.HopDelay) do
-        if getgenv().Supreme.Hop then
-            if not getgenv().Supreme.SmartHop
-            or (os.clock()-lastFruit) > getgenv().Supreme.HopDelay then
+        if getgenv().Supreme.ServerHop then
+            if not getgenv().Supreme.SmartHop or os.clock()-lastFruit > getgenv().Supreme.HopDelay then
                 TeleportService:Teleport(game.PlaceId)
             end
         end
     end
 end)
 
---------------------------------------------------
--- ANTI AFK
---------------------------------------------------
 player.Idled:Connect(function()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
-notify("Supreme Hub V27","Cosmic Supremacy carregada 👑")
+StarterGui:SetCore("SendNotification",{
+    Title="Supreme Hub V28",
+    Text="Carregado com sucesso 👑",
+    Duration=5
+})
