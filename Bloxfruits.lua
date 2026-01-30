@@ -134,16 +134,24 @@ pages.Position = UDim2.new(0,150,0,50)
 pages.Size = UDim2.new(1,-160,1,-60)
 pages.BackgroundTransparency = 1
 
+-- Função para criar páginas com CanvasSize automático
 local function newPage(name)
     local p = Instance.new("ScrollingFrame", pages)
     p.Name = name
     p.Visible = false
-    p.CanvasSize = UDim2.new(0,0,0,800)
+    p.CanvasSize = UDim2.new(0,0,0,0)
     p.ScrollBarThickness = 3
     p.BackgroundTransparency = 1
-    local l = Instance.new("UIListLayout", p)
-    l.Padding = UDim.new(0,10)
-    l.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    local layout = Instance.new("UIListLayout", p)
+    layout.Padding = UDim.new(0,10)
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        p.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
+    end)
+
     return p
 end
 
@@ -155,6 +163,7 @@ local P_Server  = newPage("Server")
 local P_Updates = newPage("Updates")
 P_Main.Visible = true
 
+-- Função para criar abas
 local function tab(name, page, order)
     local b = Instance.new("TextButton", tabs)
     b.Size = UDim2.new(1,-10,0,36)
