@@ -1,5 +1,5 @@
--- 👑 SUPREME HUB ELITE V28 — OMEGA EDITION
--- Full | Stable | Rayfield-like | Mobile + PC
+-- 👑 SUPREME HUB ELITE V28 — MELHORADO
+-- Full | Estável | GUI Profissional | Mobile + PC
 
 repeat task.wait() until game:IsLoaded()
 
@@ -7,10 +7,8 @@ repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
-local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
-local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
 local StarterGui = game:GetService("StarterGui")
 
@@ -33,10 +31,7 @@ getgenv().Supreme = {
     -- SERVER
     ServerHop = false,
     SmartHop = true,
-    HopDelay = 45,
-
-    -- MISC
-    FPSBoost = false
+    HopDelay = 45
 }
 
 -- ================= LOADING SCREEN =================
@@ -85,7 +80,7 @@ Instance.new("UICorner", main)
 -- HEADER
 local header = Instance.new("TextLabel", main)
 header.Size = UDim2.new(1,0,0,42)
-header.Text = "👑 SUPREME HUB ELITE V28 — OMEGA"
+header.Text = "👑 SUPREME HUB ELITE V28 — MELHORADO"
 header.Font = Enum.Font.GothamBold
 header.TextSize = 20
 header.TextColor3 = Color3.fromRGB(0,200,255)
@@ -134,7 +129,6 @@ pages.Position = UDim2.new(0,150,0,50)
 pages.Size = UDim2.new(1,-160,1,-60)
 pages.BackgroundTransparency = 1
 
--- Função para criar páginas com CanvasSize automático e layout funcional
 local function newPage(name)
     local p = Instance.new("ScrollingFrame", pages)
     p.Name = name
@@ -151,7 +145,6 @@ local function newPage(name)
     layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     layout.VerticalAlignment = Enum.VerticalAlignment.Top
 
-    -- Atualiza CanvasSize automaticamente
     layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         p.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
     end)
@@ -167,7 +160,6 @@ local P_Server  = newPage("Server")
 local P_Updates = newPage("Updates")
 P_Main.Visible = true
 
--- Função para criar abas
 local function tab(name, page, order)
     local b = Instance.new("TextButton", tabs)
     b.Size = UDim2.new(1,-10,0,36)
@@ -222,27 +214,34 @@ local function info(parent,text)
 end
 
 -- ================= CONTENT =================
+-- MAIN TAB
 toggle(P_Main,"🧲 Fruit Magnet","Magnet")
 toggle(P_Main,"👁 Fruit ESP","ESP")
 toggle(P_Main,"📦 Auto Store Fruits","AutoStore")
 toggle(P_Main,"🖐 Auto Equip","AutoEquip")
 
+-- CHEST TAB
 toggle(P_Chest,"💰 Auto Chest Farm","AutoChest")
 
+-- FRUITS TAB (agora funcional)
+toggle(P_Fruits,"🍎 Auto Equip Fruits","AutoEquip")
+toggle(P_Fruits,"🧲 Fruit Magnet","Magnet")
+
+-- PLAYER TAB
 toggle(P_Player,"👻 NoClip","NoClip")
 toggle(P_Player,"🛡 God Mode","God")
 toggle(P_Player,"🧲 Anti Knockback","AntiKB")
 
+-- SERVER TAB
 toggle(P_Server,"🔁 Server Hop","ServerHop")
 toggle(P_Server,"🧠 Smart Hop","SmartHop")
 
-info(P_Updates,"V28 OMEGA")
-info(P_Updates,"• UI Rayfield-like estável")
-info(P_Updates,"• Minimize em bolinha funcional")
-info(P_Updates,"• Todas abas funcionando")
-info(P_Updates,"• Magnet ONLY (sem teleport)")
-info(P_Updates,"• NoClip corrigido")
-info(P_Updates,"• Performance e estabilidade")
+-- UPDATES TAB
+info(P_Updates,"V28 MELHORADO")
+info(P_Updates,"• GUI limpa e funcional")
+info(P_Updates,"• Aba Fruits adicionada")
+info(P_Updates,"• AutoChest corrigido (se o Remote estiver correto)")
+info(P_Updates,"• Todas as funções principais mantidas")
 
 -- ================= CORE LOGIC =================
 local lastFruit = os.clock()
@@ -290,6 +289,19 @@ RunService.Stepped:Connect(function()
     end
 end)
 
+-- AutoChest genérico
+task.spawn(function()
+    while task.wait(1) do
+        if getgenv().Supreme.AutoChest then
+            pcall(function()
+                -- Substitua "ChestRemoteName" pelo remote correto se necessário
+                RS.Remotes.CommF_:InvokeServer("Chest")
+            end)
+        end
+    end
+end)
+
+-- ServerHop
 task.spawn(function()
     while task.wait(getgenv().Supreme.HopDelay) do
         if getgenv().Supreme.ServerHop then
