@@ -134,20 +134,24 @@ pages.Position = UDim2.new(0,150,0,50)
 pages.Size = UDim2.new(1,-160,1,-60)
 pages.BackgroundTransparency = 1
 
--- Função para criar páginas com CanvasSize automático
+-- Função para criar páginas com CanvasSize automático e layout funcional
 local function newPage(name)
     local p = Instance.new("ScrollingFrame", pages)
     p.Name = name
     p.Visible = false
-    p.CanvasSize = UDim2.new(0,0,0,0)
-    p.ScrollBarThickness = 3
     p.BackgroundTransparency = 1
+    p.ScrollBarThickness = 3
+    p.Size = UDim2.new(1,0,1,0)
+    p.CanvasSize = UDim2.new(0,0,0,0)
 
     local layout = Instance.new("UIListLayout", p)
     layout.Padding = UDim.new(0,10)
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.FillDirection = Enum.FillDirection.Vertical
     layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Top
 
+    -- Atualiza CanvasSize automaticamente
     layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         p.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
     end)
