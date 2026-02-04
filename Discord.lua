@@ -1,30 +1,33 @@
 --==================================================
--- BLOX FRUITS FARM MONITOR - FULL SYSTEM
--- Beli | Frutas | Sessão | Alertas | Discord Embed
+-- BLOX FRUITS FARM MONITOR - FULL + IMPROVED
+-- Beli | Frutas (detecção dupla) | Sessão | Alertas
 --==================================================
 
---============ CONFIG ============--
+---------------- CONFIG ----------------
 local Config = {
     Webhook = "https://discord.com/api/webhooks/1468450683832242373/FjjQxp03SB8sk1J-sBUsWbr2LYjd9AJEFppolEArJjlYL0WgKXQz-7GzrTsNoaqXJeaf",
-    BeliMilestone = 1_000_000, -- 1M
-    CheckDelay = 5,            -- segundos
+    BeliMilestone = 1_000_000,
+    BeliCheckDelay = 5,
+    InventoryCheckDelay = 2,
     FooterText = "Blox Fruits Farm Monitor"
 }
 
---============ SERVICES ============--
+---------------- SERVICES ----------------
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
+local Backpack = player:WaitForChild("Backpack")
 
---============ STATS ============--
+---------------- STATS ----------------
 local Stats = {
     StartTime = os.time(),
     LastBeliMilestone = 0,
+    LastMilestoneTime = os.time(),
     FruitsCollected = 0,
-    LastMilestoneTime = os.time()
+    LastInventoryCount = 0
 }
 
---============ UTILS ============--
+---------------- UTILS ----------------
 local function formatTime(sec)
     local h = math.floor(sec / 3600)
     local m = math.floor((sec % 3600) / 60)
@@ -54,10 +57,10 @@ local function sendEmbed(title, description, fields, color)
     end)
 end
 
---============ START LOG ============--
+---------------- START LOG ----------------
 sendEmbed(
     "🟢 Farm iniciado",
-    "Monitoramento iniciado com sucesso",
+    "Sistema de monitoramento ativo",
     {
         {name="Jogador", value=player.Name, inline=true},
         {name="Level", value=tostring(player.Data.Level.Value), inline=true}
@@ -65,9 +68,9 @@ sendEmbed(
     0x00ff00
 )
 
---============ BELI MONITOR ============--
+---------------- BELI MONITOR ----------------
 task.spawn(function()
-    while task.wait(Config.CheckDelay) do
+    while task.wait(Config.BeliCheckDelay) do
         local beli = player.Data.Beli.Value
         local milestone = math.floor(beli / Config.BeliMilestone)
 
@@ -80,12 +83,12 @@ task.spawn(function()
 
             sendEmbed(
                 "💰 Novo marco de Beli",
-                "Progresso automático detectado",
+                "Progresso detectado",
                 {
-                    {name="Beli atual", value=string.format("%d", beli), inline=true},
+                    {name="Beli atual", value=tostring(beli), inline=true},
                     {name="Marco", value=milestone .. "M", inline=true},
                     {name="Tempo p/ último 1M", value=formatTime(delta), inline=false},
-                    {name="Tempo total farmando", value=formatTime(now - Stats.StartTime), inline=false}
+                    {name="Tempo total", value=formatTime(now - Stats.StartTime), inline=false}
                 },
                 0x00ff00
             )
@@ -93,30 +96,68 @@ task.spawn(function()
     end
 end)
 
---============ FRUIT MONITOR ============--
-local Backpack = player:WaitForChild("Backpack")
-
+---------------- FRUIT EVENT DETECTION ----------------
 Backpack.ChildAdded:Connect(function(tool)
     if tool:IsA("Tool") and tool.Name:lower():find("fruit") then
         Stats.FruitsCollected += 1
 
-        task.wait(2)
-        local stored = tool.Parent == Backpack
-
         sendEmbed(
-            "🍏 Fruta obtida",
-            tool.Name,
+            "🍏 Fruta detectada",
+            "Nova fruta apareceu no Backpack",
             {
-                {name="Status", value=stored and "✅ Guardada" or "❌ Não guardada", inline=true},
-                {name="Total de frutas", value=tostring(Stats.FruitsCollected), inline=true},
-                {name="Beli atual", value=tostring(player.Data.Beli.Value), inline=true}
+                {name="Fruta", value=tool.Name, inline=true},
+                {name="Total detectadas", value=tostring(Stats.FruitsCollected), inline=true}
             },
-            stored and 0x00ff00 or 0xff0000
+            0x00ff00
         )
     end
 end)
 
---============ LEVEL CHANGE ============--
+---------------- INVENTORY COMPARISON (REAL CHECK) ----------------
+local function countFruits()
+    local count = 0
+    for _, item in ipairs(Backpack:GetChildren()) do
+        if item:IsA("Tool") and item.Name:lower():find("fruit") then
+            count += 1
+        end
+    end
+    return count
+end
+
+Stats.LastInventoryCount = countFruits()
+
+task.spawn(function()
+    while task.wait(Config.InventoryCheckDelay) do
+        local currentCount = countFruits()
+
+        if currentCount > Stats.LastInventoryCount then
+            sendEmbed(
+                "📦 Fruta guardada",
+                "Inventário aumentou",
+                {
+                    {name="Antes", value=tostring(Stats.LastInventoryCount), inline=true},
+                    {name="Agora", value=tostring(currentCount), inline=true},
+                    {name="Beli atual", value=tostring(player.Data.Beli.Value), inline=true}
+                },
+                0x00ff00
+            )
+        elseif currentCount < Stats.LastInventoryCount then
+            sendEmbed(
+                "📉 Fruta removida",
+                "Inventário diminuiu",
+                {
+                    {name="Antes", value=tostring(Stats.LastInventoryCount), inline=true},
+                    {name="Agora", value=tostring(currentCount), inline=true}
+                },
+                0xff0000
+            )
+        end
+
+        Stats.LastInventoryCount = currentCount
+    end
+end)
+
+---------------- LEVEL UP ----------------
 player.Data.Level:GetPropertyChangedSignal("Value"):Connect(function()
     sendEmbed(
         "⬆️ Level up",
@@ -128,7 +169,7 @@ player.Data.Level:GetPropertyChangedSignal("Value"):Connect(function()
     )
 end)
 
---============ TELEPORT / KICK ALERT ============--
+---------------- TELEPORT / KICK ----------------
 player.OnTeleport:Connect(function(state)
     if state == Enum.TeleportState.Failed then
         sendEmbed(
@@ -140,14 +181,14 @@ player.OnTeleport:Connect(function(state)
     end
 end)
 
---============ SCRIPT END FAILSAFE ============--
+---------------- SESSION END ----------------
 game:BindToClose(function()
     sendEmbed(
         "🔴 Farm finalizado",
         "Script encerrado ou jogo fechado",
         {
             {name="Tempo total", value=formatTime(os.time() - Stats.StartTime), inline=true},
-            {name="Frutas coletadas", value=tostring(Stats.FruitsCollected), inline=true}
+            {name="Frutas detectadas", value=tostring(Stats.FruitsCollected), inline=true}
         },
         0xff0000
     )
