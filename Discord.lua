@@ -7,7 +7,7 @@
 local Config = {
     Webhook = "https://discord.com/api/webhooks/1468450683832242373/FjjQxp03SB8sk1J-sBUsWbr2LYjd9AJEFppolEArJjlYL0WgKXQz-7GzrTsNoaqXJeaf", -- COLOQUE SEU WEBHOOK AQUI
     Footer = "Blox Fruits Bot Notifier",
-    Icon = "https://i.imgur.com/xxxxxxxx.png"
+    Icon = "https://imgur.com/gallery/blox-fruits-NsWk189#Vi1TUFQ"
 }
 
 local Players = game:GetService("Players")
