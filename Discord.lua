@@ -1,6 +1,6 @@
 --==================================================
--- BLOX FRUITS FARM MONITOR - FULL + IMPROVED
--- Beli | Frutas (detecção dupla) | Sessão | Alertas
+-- BLOX FRUITS ADVANCED LOGGER v1.0
+-- Frutas | Categorias | Tempo | Anti-spam | Beli
 --==================================================
 
 ---------------- CONFIG ----------------
@@ -8,23 +8,67 @@ local Config = {
     Webhook = "https://discord.com/api/webhooks/1468450683832242373/FjjQxp03SB8sk1J-sBUsWbr2LYjd9AJEFppolEArJjlYL0WgKXQz-7GzrTsNoaqXJeaf",
     BeliMilestone = 1_000_000,
     BeliCheckDelay = 5,
-    InventoryCheckDelay = 2,
-    FooterText = "Blox Fruits Farm Monitor"
+    FruitSpamCooldown = 5, -- segundos
+    Footer = "Blox Fruits Advanced Logger"
 }
 
 ---------------- SERVICES ----------------
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+
 local player = Players.LocalPlayer
 local Backpack = player:WaitForChild("Backpack")
+local Data = player:WaitForChild("Data")
 
----------------- STATS ----------------
+---------------- FRUIT CATEGORIES ----------------
+local FruitCategories = {
+    Mythical = {
+        "Leopard","Kitsune","Dragon","Spirit","Control"
+    },
+    Legendary = {
+        "Dough","Venom","Shadow","Blizzard","Gravity","Mammoth"
+    },
+    Rare = {
+        "Phoenix","Portal","Rumble","Buddha","String","Pain"
+    },
+    Uncommon = {
+        "Light","Dark","Magma","Quake","Barrier"
+    }
+}
+
+local function getFruitCategory(name)
+    for category, list in pairs(FruitCategories) do
+        for _, fruit in ipairs(list) do
+            if name:lower():find(fruit:lower()) then
+                return category
+            end
+        end
+    end
+    return "Common"
+end
+
+local CategoryColors = {
+    Mythical = 0xff0000,
+    Legendary = 0xff00ff,
+    Rare = 0x0099ff,
+    Uncommon = 0x00ff99,
+    Common = 0xffffff
+}
+
+---------------- SESSION STATS ----------------
 local Stats = {
     StartTime = os.time(),
-    LastBeliMilestone = 0,
-    LastMilestoneTime = os.time(),
-    FruitsCollected = 0,
-    LastInventoryCount = 0
+    LastFruitTime = nil,
+    LastFruitSent = 0,
+    FruitCount = 0,
+    FruitsByCategory = {
+        Mythical = 0,
+        Legendary = 0,
+        Rare = 0,
+        Uncommon = 0,
+        Common = 0
+    },
+    LastBeliMilestone = 0
 }
 
 ---------------- UTILS ----------------
@@ -42,7 +86,7 @@ local function sendEmbed(title, description, fields, color)
             description = description,
             color = color or 0x00ff00,
             fields = fields or {},
-            footer = { text = Config.FooterText },
+            footer = { text = Config.Footer },
             timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
@@ -57,13 +101,13 @@ local function sendEmbed(title, description, fields, color)
     end)
 end
 
----------------- START LOG ----------------
+---------------- SESSION START ----------------
 sendEmbed(
-    "🟢 Farm iniciado",
-    "Sistema de monitoramento ativo",
+    "🟢 Sessão iniciada",
+    "Logger ativo",
     {
         {name="Jogador", value=player.Name, inline=true},
-        {name="Level", value=tostring(player.Data.Level.Value), inline=true}
+        {name="Level", value=tostring(Data.Level.Value), inline=true}
     },
     0x00ff00
 )
@@ -71,24 +115,18 @@ sendEmbed(
 ---------------- BELI MONITOR ----------------
 task.spawn(function()
     while task.wait(Config.BeliCheckDelay) do
-        local beli = player.Data.Beli.Value
+        local beli = Data.Beli.Value
         local milestone = math.floor(beli / Config.BeliMilestone)
 
         if milestone > Stats.LastBeliMilestone then
-            local now = os.time()
-            local delta = now - Stats.LastMilestoneTime
-
             Stats.LastBeliMilestone = milestone
-            Stats.LastMilestoneTime = now
-
             sendEmbed(
-                "💰 Novo marco de Beli",
-                "Progresso detectado",
+                "💰 Marco de Beli",
+                "Novo marco alcançado",
                 {
-                    {name="Beli atual", value=tostring(beli), inline=true},
-                    {name="Marco", value=milestone .. "M", inline=true},
-                    {name="Tempo p/ último 1M", value=formatTime(delta), inline=false},
-                    {name="Tempo total", value=formatTime(now - Stats.StartTime), inline=false}
+                    {name="Beli", value=tostring(beli), inline=true},
+                    {name="Milhões", value=milestone .. "M", inline=true},
+                    {name="Tempo", value=formatTime(os.time() - Stats.StartTime), inline=false}
                 },
                 0x00ff00
             )
@@ -96,99 +134,62 @@ task.spawn(function()
     end
 end)
 
----------------- FRUIT EVENT DETECTION ----------------
+---------------- FRUIT DETECTION ----------------
 Backpack.ChildAdded:Connect(function(tool)
-    if tool:IsA("Tool") and tool.Name:lower():find("fruit") then
-        Stats.FruitsCollected += 1
+    if not tool:IsA("Tool") then return end
+    if not tool.Name:lower():find("fruit") then return end
 
-        sendEmbed(
-            "🍏 Fruta detectada",
-            "Nova fruta apareceu no Backpack",
-            {
-                {name="Fruta", value=tool.Name, inline=true},
-                {name="Total detectadas", value=tostring(Stats.FruitsCollected), inline=true}
-            },
-            0x00ff00
-        )
+    local now = os.time()
+    if now - Stats.LastFruitSent < Config.FruitSpamCooldown then
+        return
     end
-end)
 
----------------- INVENTORY COMPARISON (REAL CHECK) ----------------
-local function countFruits()
-    local count = 0
-    for _, item in ipairs(Backpack:GetChildren()) do
-        if item:IsA("Tool") and item.Name:lower():find("fruit") then
-            count += 1
-        end
-    end
-    return count
-end
+    Stats.LastFruitSent = now
+    Stats.FruitCount += 1
 
-Stats.LastInventoryCount = countFruits()
+    local category = getFruitCategory(tool.Name)
+    Stats.FruitsByCategory[category] += 1
 
-task.spawn(function()
-    while task.wait(Config.InventoryCheckDelay) do
-        local currentCount = countFruits()
+    local timeSinceLast = Stats.LastFruitTime and (now - Stats.LastFruitTime) or 0
+    Stats.LastFruitTime = now
 
-        if currentCount > Stats.LastInventoryCount then
-            sendEmbed(
-                "📦 Fruta guardada",
-                "Inventário aumentou",
-                {
-                    {name="Antes", value=tostring(Stats.LastInventoryCount), inline=true},
-                    {name="Agora", value=tostring(currentCount), inline=true},
-                    {name="Beli atual", value=tostring(player.Data.Beli.Value), inline=true}
-                },
-                0x00ff00
-            )
-        elseif currentCount < Stats.LastInventoryCount then
-            sendEmbed(
-                "📉 Fruta removida",
-                "Inventário diminuiu",
-                {
-                    {name="Antes", value=tostring(Stats.LastInventoryCount), inline=true},
-                    {name="Agora", value=tostring(currentCount), inline=true}
-                },
-                0xff0000
-            )
-        end
-
-        Stats.LastInventoryCount = currentCount
-    end
+    sendEmbed(
+        "🍏 Fruta coletada",
+        "Nova fruta obtida",
+        {
+            {name="Fruta", value=tool.Name, inline=true},
+            {name="Categoria", value=category, inline=true},
+            {name="Total na sessão", value=tostring(Stats.FruitCount), inline=true},
+            {name="Tempo desde a última", value=timeSinceLast > 0 and formatTime(timeSinceLast) or "Primeira fruta", inline=false}
+        },
+        CategoryColors[category]
+    )
 end)
 
 ---------------- LEVEL UP ----------------
-player.Data.Level:GetPropertyChangedSignal("Value"):Connect(function()
+Data.Level:GetPropertyChangedSignal("Value"):Connect(function()
     sendEmbed(
-        "⬆️ Level up",
+        "⬆️ Level Up",
         "Novo level alcançado",
         {
-            {name="Level atual", value=tostring(player.Data.Level.Value), inline=true}
+            {name="Level atual", value=tostring(Data.Level.Value), inline=true}
         },
         0x0099ff
     )
 end)
 
----------------- TELEPORT / KICK ----------------
-player.OnTeleport:Connect(function(state)
-    if state == Enum.TeleportState.Failed then
-        sendEmbed(
-            "🚨 ALERTA",
-            "Teleport falhou ou possível kick",
-            {},
-            0xff0000
-        )
-    end
-end)
-
 ---------------- SESSION END ----------------
 game:BindToClose(function()
     sendEmbed(
-        "🔴 Farm finalizado",
-        "Script encerrado ou jogo fechado",
+        "🔴 Sessão finalizada",
+        "Resumo da sessão",
         {
-            {name="Tempo total", value=formatTime(os.time() - Stats.StartTime), inline=true},
-            {name="Frutas detectadas", value=tostring(Stats.FruitsCollected), inline=true}
+            {name="Tempo total", value=formatTime(os.time() - Stats.StartTime), inline=false},
+            {name="Beli final", value=tostring(Data.Beli.Value), inline=true},
+            {name="Frutas totais", value=tostring(Stats.FruitCount), inline=true},
+            {name="Mythical", value=tostring(Stats.FruitsByCategory.Mythical), inline=true},
+            {name="Legendary", value=tostring(Stats.FruitsByCategory.Legendary), inline=true},
+            {name="Rare", value=tostring(Stats.FruitsByCategory.Rare), inline=true}
         },
         0xff0000
     )
