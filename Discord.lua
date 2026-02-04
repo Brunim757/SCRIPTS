@@ -5,7 +5,7 @@
 
 --============ CONFIG ============--
 local Config = {
-    Webhook = "COLE_AQUI_SEU_WEBHOOK",
+    Webhook = "https://discord.com/api/webhooks/1468450683832242373/FjjQxp03SB8sk1J-sBUsWbr2LYjd9AJEFppolEArJjlYL0WgKXQz-7GzrTsNoaqXJeaf",
     BeliMilestone = 1_000_000, -- 1M
     CheckDelay = 5,            -- segundos
     FooterText = "Blox Fruits Farm Monitor"
